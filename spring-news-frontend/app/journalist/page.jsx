@@ -1,46 +1,35 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { CalendarIcon, Edit, Eye, Plus, Trash } from "lucide-react"
+"use client"
+
+import {Button} from "@/components/ui/button"
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card"
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
+import {Badge} from "@/components/ui/badge"
+import {CalendarIcon, Edit, Eye, Plus, Trash} from "lucide-react"
 import Link from "next/link"
+import {use, useEffect, useState} from "react";
+import {getAllNewsByJournalist} from "@/services/newsService";
+import Cookie from "js-cookie";
 
 export default function JournalistDashboard() {
-    // Mock data for journalist's articles
-    const articles = [
-        {
-            id: "1",
-            title: "Senate Passes Historic Infrastructure Bill After Months of Negotiations",
-            status: "published",
-            category: "Politics",
-            publishDate: "May 15, 2025",
-            views: 1245,
-            comments: 32,
-        },
-        {
-            id: "2",
-            title: "Global Leaders Gather for Climate Summit as Deadline Looms",
-            status: "published",
-            category: "World",
-            publishDate: "May 12, 2025",
-            views: 876,
-            comments: 18,
-        },
-        {
-            id: "3",
-            title: "Tech Giant Announces Revolutionary AI Product at Annual Conference",
-            status: "Rejected",
-            category: "Technology",
-            lastEdited: "May 14, 2025",
-        },
-        {
-            id: "4",
-            title: "Healthcare Reform Bill Faces Uncertain Future in Congress",
-            status: "pending",
-            category: "Health",
-            submittedDate: "May 13, 2025",
-        },
-    ]
+    const [articles, setArticles] = useState([])
+    const [loading, setLoading] = useState(false)
+
+    useEffect(() => {
+        const userId = JSON.parse(Cookie.get("user")).id;
+        getAllNewsByJournalist(userId)
+            .then((res) => setArticles(Array.isArray(res) ? res : [res].filter(Boolean)))
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, []);
+
+    if (loading) return <p>Loading...</p>
+
+    // Optionally compute stats
+    const publishedCount = articles?.filter(a => a.status === "published").length
+    const rejectedCount = articles?.filter(a => a.status === "Rejected").length
+    const totalViews = articles?.reduce((sum, a) => sum + (a.views || 0), 0)
+    const totalComment = articles?.reduce((sum, a) => sum + (a.comment || 0), 0)
+
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -51,7 +40,7 @@ export default function JournalistDashboard() {
                 </div>
                 <Button>
 
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 mr-2"/>
                     <Link href="/journalist/new-article">
                         New Article
                     </Link>
@@ -62,25 +51,25 @@ export default function JournalistDashboard() {
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Published Articles</CardTitle>
-                        <CardDescription className="text-2xl font-bold">24</CardDescription>
+                        <CardDescription className="text-2xl font-bold">{publishedCount}</CardDescription>
                     </CardHeader>
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Rejected Articles</CardTitle>
-                        <CardDescription className="text-2xl font-bold">7</CardDescription>
+                        <CardDescription className="text-2xl font-bold">{rejectedCount}</CardDescription>
                     </CardHeader>
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Total Views</CardTitle>
-                        <CardDescription className="text-2xl font-bold">45.2K</CardDescription>
+                        <CardDescription className="text-2xl font-bold">{totalViews}</CardDescription>
                     </CardHeader>
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Total Comments</CardTitle>
-                        <CardDescription className="text-2xl font-bold">312</CardDescription>
+                        <CardDescription className="text-2xl font-bold">{totalComment}</CardDescription>
                     </CardHeader>
                 </Card>
             </div>
@@ -94,8 +83,9 @@ export default function JournalistDashboard() {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {articles.map((article) => (
-                                    <div key={article.id} className="flex items-center justify-between p-4 border rounded-lg">
+                                {articles?.map((article) => (
+                                    <div key={article.id}
+                                         className="flex items-center justify-between p-4 border rounded-lg">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <Badge
@@ -106,6 +96,7 @@ export default function JournalistDashboard() {
                                                                 ? "outline"
                                                                 : "secondary"
                                                     }
+                                                    className={article.status === "Rejected" && "bg-red-500 border-red-500 text-white"}
                                                 >
                                                     {article.status === "published"
                                                         ? "Published"
@@ -120,26 +111,26 @@ export default function JournalistDashboard() {
                                                 {article.status === "published" && (
                                                     <>
                             <span className="flex items-center">
-                              <CalendarIcon className="h-4 w-4 mr-1" />
-                              Published on {article.publishDate}
+                              <CalendarIcon className="h-4 w-4 mr-1"/>
+                              Submitted on {article.date}
                             </span>
                                                         <span className="mx-2">|</span>
                                                         <span className="flex items-center">
-                              <Eye className="h-4 w-4 mr-1" />
+                              <Eye className="h-4 w-4 mr-1"/>
                                                             {article.views} views
                             </span>
                                                     </>
                                                 )}
                                                 {article.status === "Rejected" && (
                                                     <span className="flex items-center">
-                            <CalendarIcon className="h-4 w-4 mr-1" />
-                            Last edited on {article.lastEdited}
+                            <CalendarIcon className="h-4 w-4 mr-1"/>
+                            Submitted on {article.date}
                           </span>
                                                 )}
                                                 {article.status === "pending" && (
                                                     <span className="flex items-center">
-                            <CalendarIcon className="h-4 w-4 mr-1" />
-                            Submitted on {article.submittedDate}
+                            <CalendarIcon className="h-4 w-4 mr-1"/>
+                            Submitted on {article.date}
                           </span>
                                                 )}
                                             </div>
@@ -148,17 +139,17 @@ export default function JournalistDashboard() {
                                             {article.status === "published" && (
                                                 <Button variant="outline" size="icon" asChild>
                                                     <Link href={`/article/${article.id}`}>
-                                                        <Eye className="h-4 w-4" />
+                                                        <Eye className="h-4 w-4"/>
                                                         <span className="sr-only">View</span>
                                                     </Link>
                                                 </Button>
                                             )}
                                             <Button variant="outline" size="icon">
-                                                <Edit className="h-4 w-4" />
+                                                <Edit className="h-4 w-4"/>
                                                 <span className="sr-only">Edit</span>
                                             </Button>
                                             <Button variant="outline" size="icon">
-                                                <Trash className="h-4 w-4" />
+                                                <Trash className="h-4 w-4"/>
                                                 <span className="sr-only">Delete</span>
                                             </Button>
                                         </div>

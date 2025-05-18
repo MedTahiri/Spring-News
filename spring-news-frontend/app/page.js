@@ -8,7 +8,7 @@ import Image from "next/image"
 import {CalendarIcon, Eye, MessageSquare} from "lucide-react"
 import Link from "next/link";
 import {useEffect, useState} from "react";
-import {News, TopNews} from "@/services/newService";
+import {News, TopNews} from "@/services/newsService";
 
 export default function Home() {
     const [news, setNews] = useState([]);
@@ -59,7 +59,7 @@ export default function Home() {
                                 </div>
                             </div>
                             <div className="flex items-center text-sm text-muted-foreground mb-4">
-                                <span className="font-semibold text-foreground mr-2">By {news[0]?.journalist}</span>
+                                <span className="font-semibold text-foreground mr-2">By {news[0]?.journalist?.firstname} {news[0]?.journalist?.lastname}</span>
                                 <span className="flex items-center">
                   <CalendarIcon className="h-4 w-4 mr-1"/> {news[0]?.date}
                 </span>
@@ -156,7 +156,7 @@ export default function Home() {
                                                     {item.title}
                                                 </CardTitle>
                                                 <CardDescription className="flex items-center gap-2">
-                                                    <span>By {item.journalist}</span>
+                                                    <span>By {item.journalist?.firstname} {item.journalist?.lastname}</span>
                                                     <span>•</span>
                                                     <span>{item.date}</span>
                                                 </CardDescription>

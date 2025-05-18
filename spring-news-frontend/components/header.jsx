@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import Cookie from "js-cookie"
+import {useEffect, useState} from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import {Button} from "@/components/ui/button"
+import {Input} from "@/components/ui/input"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -12,21 +13,45 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Menu, Search, User, X } from "lucide-react"
+import {Sheet, SheetContent, SheetTrigger} from "@/components/ui/sheet"
+import {Avatar, AvatarFallback} from "@/components/ui/avatar"
+import {Menu, Search, User, X} from "lucide-react"
+import {useRouter} from "next/navigation";
 
 export default function Header() {
     const [showSearch, setShowSearch] = useState(false)
     const [isLoggedIn, setIsLoggedIn] = useState(false)
+    const [user, setUser] = useState({})
+
+    const router = useRouter()
+
+    const today = new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    })
+
+
+    useEffect(() => {
+        const userCookie = Cookie.get("user")
+        if (userCookie) {
+            const parsedUser = JSON.parse(userCookie)
+            setUser(parsedUser)
+            setIsLoggedIn(true)
+        } else {
+            setIsLoggedIn(false)
+            setUser(null)
+        }
+    }, [])
 
     const toggleSearch = () => {
         setShowSearch(!showSearch)
     }
 
-    // For demo purposes only
-    const toggleLogin = () => {
-        setIsLoggedIn(!isLoggedIn)
+    const logout = () => {
+        Cookie.remove("user")
+        setIsLoggedIn(false)
+        router.push("/")
     }
 
     return (
@@ -38,7 +63,7 @@ export default function Header() {
                         <Sheet>
                             <SheetTrigger asChild>
                                 <Button variant="ghost" size="icon" className="md:hidden">
-                                    <Menu className="h-5 w-5" />
+                                    <Menu className="h-5 w-5"/>
                                     <span className="sr-only">Open menu</span>
                                 </Button>
                             </SheetTrigger>
@@ -46,12 +71,12 @@ export default function Header() {
                                 <nav className="flex flex-col gap-4 mt-8">
                                     <div className="mt-auto pt-8">
                                         {isLoggedIn ? (
-                                            <Button onClick={toggleLogin} className="w-full" variant="outline">
+                                            <Button oonClick={() => logout()} className="w-full" variant="outline">
                                                 Sign Out
                                             </Button>
                                         ) : (
                                             <div className="space-y-2">
-                                                <Button onClick={toggleLogin} className="w-full">
+                                                <Button className="w-full">
                                                     Sign In
                                                 </Button>
                                                 <Button variant="outline" className="w-full">
@@ -63,7 +88,7 @@ export default function Header() {
                                 </nav>
                             </SheetContent>
                         </Sheet>
-                        <span className="text-xs text-muted-foreground hidden md:inline">May 15, 2025</span>
+                        <span className="text-xs text-muted-foreground hidden md:inline">{today}</span>
                     </div>
 
                     <Link href="/" className="text-center">
@@ -72,7 +97,7 @@ export default function Header() {
 
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" size="icon" onClick={toggleSearch} className="relative">
-                            {showSearch ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+                            {showSearch ? <X className="h-5 w-5"/> : <Search className="h-5 w-5"/>}
                             <span className="sr-only">{showSearch ? "Close search" : "Search"}</span>
                         </Button>
 
@@ -82,36 +107,37 @@ export default function Header() {
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="rounded-full">
                                             <Avatar className="h-8 w-8">
-                                                <AvatarFallback>JD</AvatarFallback>
+                                                <AvatarFallback>{user.firstname[0] + user.lastname[0]}</AvatarFallback>
                                             </Avatar>
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem>
-                                            <Link href="/profile" className="flex w-full">
+                                            <Link href={"/profile/"+user.id} className="flex w-full">
                                                 Profile
                                             </Link>
                                         </DropdownMenuItem>
-                                        {/* Show journalist options if user is a journalist */}
-                                        <DropdownMenuItem>
-                                            <Link href="/journalist" className="flex w-full">
-                                                Journalist Dashboard
-                                            </Link>
-                                        </DropdownMenuItem>
-                                        {/* Show admin options if user is an admin */}
-                                        <DropdownMenuItem>
-                                            <Link href="/admin" className="flex w-full">
-                                                Admin Panel
-                                            </Link>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={toggleLogin}>Sign Out</DropdownMenuItem>
+                                        {user.role === "journalist" &&
+                                            <DropdownMenuItem>
+                                                <Link href="/journalist" className="flex w-full">
+                                                    Journalist Dashboard
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        }
+                                        {user.role === "admin" &&
+                                            <DropdownMenuItem>
+                                                <Link href="/admin" className="flex w-full">
+                                                    Admin Panel
+                                                </Link>
+                                            </DropdownMenuItem>}
+                                        <DropdownMenuSeparator/>
+                                        <DropdownMenuItem onClick={() => logout()}>Sign Out</DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </>
                         ) : (
                             <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm" className="hidden md:inline-flex" onClick={toggleLogin}>
+                                <Button variant="ghost" size="sm" className="hidden md:inline-flex">
                                     <Link href="/login">
                                         Sign In
                                     </Link>
@@ -122,7 +148,7 @@ export default function Header() {
                                     </Link>
                                 </Button>
                                 <Button variant="ghost" size="icon" className="md:hidden">
-                                    <User className="h-5 w-5" />
+                                    <User className="h-5 w-5"/>
                                 </Button>
                             </div>
                         )}
@@ -133,8 +159,9 @@ export default function Header() {
                 {showSearch && (
                     <div className="py-3 border-t">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="Search for articles, topics, and more..." className="pl-10" autoFocus />
+                            <Search
+                                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+                            <Input placeholder="Search for articles, topics, and more..." className="pl-10" autoFocus/>
                         </div>
                     </div>
                 )}

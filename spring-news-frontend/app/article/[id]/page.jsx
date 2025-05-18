@@ -8,18 +8,22 @@ import {Badge} from "@/components/ui/badge"
 import {Separator} from "@/components/ui/separator"
 import {CalendarIcon, Clock, Facebook, Share2, Twitter} from "lucide-react"
 import CommentSection from "@/components/comment-section"
-import {useEffect, useState} from "react";
-import {NewsById} from "@/services/newService";
+import {use, useEffect, useState} from "react";
+import {NewsById} from "@/services/newsService";
 
 export default function ArticlePage({params}) {
-    const [newsArticle, setNewsArticle] = useState()
+
+    const {id} = use(params)
+
+    const [newsArticle, setNewsArticle] = useState([])
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        NewsById(params.id).then(setNewsArticle)
+        NewsById(id).then(setNewsArticle)
             .catch(console.error)
             .finally(() => setLoading(false));
-    })
+    }, [id])
+    if (loading) return <p>Loading...</p>;
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="max-w-4xl mx-auto">
@@ -40,7 +44,7 @@ export default function ArticlePage({params}) {
                                 <AvatarFallback>SJ</AvatarFallback>
                             </Avatar>
                             <div>
-                                <p className="font-semibold">By {newsArticle?.journalist}</p>
+                                <p className="font-semibold">By {newsArticle?.journalist?.firstname} {newsArticle?.journalist?.lastname}</p>
                                 <div className="flex items-center text-sm text-muted-foreground">
                   <span className="flex items-center">
                     <CalendarIcon className="h-4 w-4 mr-1"/> {newsArticle?.date}
@@ -104,22 +108,17 @@ export default function ArticlePage({params}) {
                 <div className="bg-gray-50 p-6 rounded-lg mb-8">
                     <div className="flex items-start gap-4">
                         <Avatar className="h-16 w-16 border">
-                            <AvatarImage src="/placeholder.svg?height=100&width=100&text=SJ" alt="Sarah Johnson"/>
-                            <AvatarFallback>SJ</AvatarFallback>
+                            <AvatarImage src="/placeholder.svg?height=100&width=100&text=SJ"
+                                         alt={newsArticle?.journalist?.firstname + " " + newsArticle?.journalist?.lastname}/>
+                            <AvatarFallback>{newsArticle?.journalist?.firstname[0] + newsArticle?.journalist?.lastname[0]}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <h3 className="font-bold text-lg mb-1">{newsArticle?.journalist}</h3>
-                            <p className="text-sm text-muted-foreground mb-2">Political Correspondent</p>
+                            <Link href={"/profile/" + newsArticle?.journalist?.id}>
+                                <h3 className="font-bold text-lg mb-1">{newsArticle?.journalist?.firstname} {newsArticle?.journalist?.lastname}</h3>
+                            </Link>
                             <p className="text-sm mb-4">
-                                Sarah Johnson is a senior political correspondent for Spring News, covering Congress and
-                                national
-                                politics. She has been reporting from Washington for over a decade and has covered three
-                                presidential
-                                administrations.
+                                {newsArticle?.journalist?.bio}
                             </p>
-                            <Button variant="outline" size="sm">
-                                Follow
-                            </Button>
                         </div>
                     </div>
                 </div>
