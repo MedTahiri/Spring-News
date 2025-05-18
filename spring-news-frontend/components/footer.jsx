@@ -7,9 +7,6 @@ export default function Footer() {
             <div className="container mx-auto px-4 py-10">
                 <div className="flex justify-between items-center">
                     <h2 className="font-serif text-2xl font-bold mb-4">Spring News</h2>
-                    <p className="text-sm text-muted-foreground mb-4">
-                        Your trusted source for the latest news and updates from around the world.
-                    </p>
                     <div className="flex gap-4">
                         <Link href="#" className="text-muted-foreground hover:text-foreground">
                             <Facebook className="h-5 w-5"/>
