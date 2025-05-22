@@ -7,18 +7,60 @@ import {Input} from "@/components/ui/input"
 import {Label} from "@/components/ui/label"
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card"
+import {useRouter} from "next/navigation";
 
 export default function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false)
+    const [formData, setFormData] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        confirmPassword: ""
+    })
+    const router = useRouter();
 
-    const handleRegister = (e) => {
+    const handleChange = (e) => {
+        setFormData({...formData, [e.target.id]: e.target.value})
+    }
+
+    const handleRegister = async (e) => {
         e.preventDefault()
+        if (formData.password !== formData.confirmPassword) {
+            alert("Passwords do not match")
+            return
+        }
+
         setIsLoading(true)
-        // Simulate registration process
-        setTimeout(() => {
+
+        const requestBody = {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            password: formData.password
+        };
+
+        try {
+            const res = await fetch("http://localhost:8080/api/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(requestBody)
+            })
+
+            if (!res.ok) throw new Error("Failed to register")
+
+            const text = await res.text();
+            console.log(text);
+            console.log("Registered successfully:", text)
+            router.push('/login')
+        } catch (err) {
+            console.error(err)
+            alert("Registration failed")
+        } finally {
             setIsLoading(false)
-            // Redirect would happen here
-        }, 1500)
+        }
     }
 
     return (
@@ -35,26 +77,56 @@ export default function RegisterPage() {
                                 <div className="grid gap-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="grid gap-2">
-                                            <Label htmlFor="first-name">First name</Label>
-                                            <Input id="first-name" type="text" required/>
+                                            <Label htmlFor="firstName">First name</Label>
+                                            <Input
+                                                id="firstName"
+                                                type="text"
+                                                value={formData.firstName}
+                                                onChange={handleChange}
+                                                required
+                                            />
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label htmlFor="last-name">Last name</Label>
-                                            <Input id="last-name" type="text" required/>
+                                            <Label htmlFor="lastName">Last name</Label>
+                                            <Input
+                                                id="lastName"
+                                                type="text"
+                                                value={formData.lastName}
+                                                onChange={handleChange}
+                                                required
+                                            />
                                         </div>
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="register-email">Email</Label>
-                                        <Input id="register-email" type="email" placeholder="name@example.com"
-                                               required/>
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            placeholder="name@example.com"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            required
+                                        />
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="register-password">Password</Label>
-                                        <Input id="register-password" type="password" required/>
+                                        <Label htmlFor="password">Password</Label>
+                                        <Input
+                                            id="password"
+                                            type="password"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            required
+                                        />
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="confirm-password">Confirm Password</Label>
-                                        <Input id="confirm-password" type="password" required/>
+                                        <Label htmlFor="confirmPassword">Confirm Password</Label>
+                                        <Input
+                                            id="confirmPassword"
+                                            type="password"
+                                            value={formData.confirmPassword}
+                                            onChange={handleChange}
+                                            required
+                                        />
                                     </div>
                                     <Button type="submit" className="w-full bg-red-700 hover:bg-red-800"
                                             disabled={isLoading}>
