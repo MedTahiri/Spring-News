@@ -13,29 +13,104 @@ import {ArrowLeft, ImageIcon, Save} from "lucide-react"
 
 export default function NewArticlePage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [formData, setFormData] = useState({
+        title: "",
+        resume: "",
+        theme: "",
+        image: "",
+        content: "",
+        tags: "",
+        authorId: 0, // must be the ID saved after the login
+        link: ""
+    })
+    const [submitMessage, setSubmitMessage] = useState("")
 
-    const handleSubmit = (e, status) => {
-        e.preventDefault()
-        setIsSubmitting(true)
+    const handleInputChange = (field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: value
+        }))
 
-        // Simulate form submission
-        setTimeout(() => {
-            setIsSubmitting(false)
-            // Redirect would happen here
-        }, 1500)
+        // Auto-generate link from title
+        if (field === 'title') {
+            const generatedLink = value
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .trim()
+            setFormData(prev => ({
+                ...prev,
+                link: generatedLink
+            }))
+        }
     }
 
-    const categories = [
-        "Politics",
-        "Business",
-        "Technology",
-        "Health",
-        "Sports",
-        "Entertainment",
-        "World",
-        "Science",
-        "Opinion",
-        "Education",
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+        setSubmitMessage("")
+
+        try {
+            // Process tags - split by comma and trim whitespace
+            const tagsArray = formData.tags
+                .split(',')
+                .map(tag => tag.trim())
+                .filter(tag => tag.length > 0)
+
+            // JSON
+            const payload = {
+                title: formData.title,
+                resume: formData.resume,
+                theme: formData.theme.toUpperCase(),
+                image: formData.image,
+                content: formData.content,
+                tags: tagsArray,
+                authorId: formData.authorId,
+                link: formData.link
+            }
+
+            console.log('Submitting payload:', JSON.stringify(payload, null, 2))
+
+            const response = await fetch('http://localhost:8080/api/articles/new', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                mode: 'cors', // Explicitly set CORS mode
+                body: JSON.stringify(payload)
+            })
+
+            if (response.ok) {
+                const result = await response.json()
+                setSubmitMessage("Article submitted successfully!")
+                console.log('Success:', result)
+
+            } else {
+                const errorData = await response.text()
+                setSubmitMessage(`Error: ${response.status} - ${errorData}`)
+                console.error('Error response:', errorData)
+            }
+        } catch (error) {
+            setSubmitMessage(`Network error: ${error.message}`)
+            console.error('Network error:', error)
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const themes = [
+        "POLITICS",
+        "BUSINESS",
+        "TECHNOLOGY",
+        "HEALTH",
+        "SPORTS",
+        "ENTERTAINMENT",
+        "WORLD",
+        "SCIENCE",
+        "OPINION",
+        "EDUCATION",
     ]
 
     return (
@@ -61,31 +136,53 @@ export default function NewArticlePage() {
                                 <CardDescription>Write your article content and add media</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <form className="space-y-6">
+                                <form onSubmit={handleSubmit} className="space-y-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="title">Title</Label>
-                                        <Input id="title" placeholder="Enter article title" className="text-lg"/>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="excerpt">Excerpt</Label>
-                                        <Textarea
-                                            id="excerpt"
-                                            placeholder="Write a short excerpt or summary"
-                                            className="resize-none"
-                                            rows={3}
+                                        <Label htmlFor="title">Title *</Label>
+                                        <Input
+                                            id="title"
+                                            placeholder="Enter article title"
+                                            className="text-lg"
+                                            value={formData.title}
+                                            onChange={(e) => handleInputChange('title', e.target.value)}
+                                            required
                                         />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="content">Content</Label>
+                                        <Label htmlFor="resume">Resume/Summary *</Label>
+                                        <Textarea
+                                            id="resume"
+                                            placeholder="Write a short summary or resume of the article"
+                                            className="resize-none"
+                                            rows={3}
+                                            value={formData.resume}
+                                            onChange={(e) => handleInputChange('resume', e.target.value)}
+                                            required
+                                        />
+                                    </div>
 
+                                    <div className="space-y-2">
+                                        <Label htmlFor="content">Content *</Label>
                                         <Textarea
                                             id="content"
                                             placeholder="Write your article content here..."
                                             className="min-h-[400px]"
+                                            value={formData.content}
+                                            onChange={(e) => handleInputChange('content', e.target.value)}
+                                            required
                                         />
+                                    </div>
 
+                                    <div className="space-y-2">
+                                        <Label htmlFor="link">URL Link</Label>
+                                        <Input
+                                            id="link"
+                                            placeholder="Article URL (auto-generated from title)"
+                                            value={formData.link}
+                                            onChange={(e) => handleInputChange('link', e.target.value)}
+                                        />
+                                        <p className="text-xs text-gray-500">This will be auto-generated from the title, but you can customize it</p>
                                     </div>
                                 </form>
                             </CardContent>
@@ -101,15 +198,15 @@ export default function NewArticlePage() {
                             <CardContent>
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="category">Category</Label>
-                                        <Select>
+                                        <Label htmlFor="theme">Theme *</Label>
+                                        <Select onValueChange={(value) => handleInputChange('theme', value)} required>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select category"/>
+                                                <SelectValue placeholder="Select theme"/>
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {categories.map((category) => (
-                                                    <SelectItem key={category} value={category.toLowerCase()}>
-                                                        {category}
+                                                {themes.map((theme) => (
+                                                    <SelectItem key={theme} value={theme}>
+                                                        {theme}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -118,20 +215,34 @@ export default function NewArticlePage() {
 
                                     <div className="space-y-2">
                                         <Label htmlFor="tags">Tags</Label>
-                                        <Input id="tags" placeholder="Enter tags separated by commas"/>
+                                        <Input
+                                            id="tags"
+                                            placeholder="Enter tags separated by commas (e.g., tech, infos, ai)"
+                                            value={formData.tags}
+                                            onChange={(e) => handleInputChange('tags', e.target.value)}
+                                        />
+                                        <p className="text-xs text-gray-500">Separate multiple tags with commas</p>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label>Featured Image</Label>
-                                        <div className="border-2 border-dashed rounded-md p-6 text-center">
-                                            <ImageIcon className="h-8 w-8 mx-auto text-gray-400"/>
-                                            <div className="mt-2">
-                                                <Button variant="secondary" size="sm">
-                                                    Upload Image
-                                                </Button>
-                                            </div>
-                                            <p className="text-xs text-gray-500 mt-2">PNG, JPG or GIF up to 10MB</p>
-                                        </div>
+                                        <Label htmlFor="image">Image URL</Label>
+                                        <Input
+                                            id="image"
+                                            placeholder="https://example.com/image.jpg"
+                                            value={formData.image}
+                                            onChange={(e) => handleInputChange('image', e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="authorId">Author ID</Label>
+                                        <Input
+                                            id="authorId"
+                                            type="number"
+                                            placeholder="Author ID"
+                                            value={formData.authorId}
+                                            onChange={(e) => handleInputChange('authorId', parseInt(e.target.value) || 8)}
+                                        />
                                     </div>
                                 </div>
                             </CardContent>
@@ -143,14 +254,27 @@ export default function NewArticlePage() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <Button
+                                    type="submit"
                                     className="w-full bg-red-700 hover:bg-red-800"
-                                    onClick={(e) => handleSubmit(e, "publish")}
+                                    onClick={handleSubmit}
                                     disabled={isSubmitting}
                                 >
-                                    Submit for Review
+                                    {isSubmitting ? "Submitting..." : "Submit Article"}
                                 </Button>
+
+                                {submitMessage && (
+                                    <div className={`p-3 rounded text-sm ${
+                                        submitMessage.includes('successfully')
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-red-100 text-red-700'
+                                    }`}>
+                                        {submitMessage}
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
+
+
                     </div>
                 </div>
             </div>

@@ -5,7 +5,7 @@ const newsArticles = [
         excerpt: "The $1.2 trillion package represents the largest investment in public works in decades",
         category: "Politics",
         content: "After months of intense negotiations and bipartisan efforts, the Senate has finally passed the much-anticipated infrastructure bill, marking a significant legislative victory. The comprehensive package, totaling $1.2 trillion, aims to revitalize America's aging infrastructure, create millions of jobs, and boost economic growth across the nation.",
-        image: "https://placehold.co/1200x800.svg?text=Infrastructure",
+        image: "/test-image.jpg",
         tag: ["infrastructure", "economy"],
         journalist: {
             id: "1",

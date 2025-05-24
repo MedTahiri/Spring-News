@@ -38,8 +38,6 @@ public class ArticleResponse {
         this.status = article.getStatus();
     }
 
-    // Getters and setters ...
-
     // Inner class to send minimal user info in author field
     public static class UserSummary {
         private Long id;

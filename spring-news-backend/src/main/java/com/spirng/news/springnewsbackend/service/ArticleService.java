@@ -15,5 +15,4 @@ public class ArticleService {
         return articleRepository.save(article);
     }
 
-    // tu peux ajouter d’autres méthodes (findAll, findById, delete, etc.)
 }
