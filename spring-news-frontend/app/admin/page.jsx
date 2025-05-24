@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -6,47 +8,74 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {CheckCircle, Trash, Brain, Eye, Flag, Lock, Plus, Shield, User, XCircle} from "lucide-react"
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
+import { useState, useEffect } from "react"
 
 export default function AdminDashboard() {
-    // Mock data for users
-    const users = [
-        {
-            id: "1",
-            name: "Sarah Johnson",
-            email: "sarah.johnson@example.com",
-            role: "journalist",
-            status: "active",
-            joinDate: "Jan 15, 2023",
-            articles: 24,
-        },
-        {
-            id: "2",
-            name: "Michael Chen",
-            email: "michael.chen@example.com",
-            role: "journalist",
-            status: "active",
-            joinDate: "Mar 22, 2023",
-            articles: 18,
-        },
-        {
-            id: "3",
-            name: "Emily Wilson",
-            email: "emily.wilson@example.com",
-            role: "User",
-            status: "active",
-            joinDate: "Nov 5, 2022",
-            articles: 0,
-        },
-        {
-            id: "4",
-            name: "John Smith",
-            email: "john.smith@example.com",
-            role: "user",
-            status: "suspended",
-            joinDate: "Apr 10, 2024",
-            articles: 0,
-        },
-    ]
+    const [users, setUsers] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+
+    // Fetch users from API
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const response = await fetch('http://localhost:8080/api/user/all')
+                if (!response.ok) {
+                    throw new Error('Failed to fetch users')
+                }
+                const userData = await response.json()
+                setUsers(userData)
+            } catch (err) {
+                setError(err.message)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchUsers()
+    }, [])
+
+    // Delete user function
+    const handleDeleteUser = async (userId) => {
+        if (window.confirm('Are you sure you want to delete this user?')) {
+            try {
+                const response = await fetch(`http://localhost:8080/api/user/delete/${userId}`, {
+                    method: 'DELETE'
+                })
+                if (response.ok) {
+                    // Remove user from state
+                    setUsers(users.filter(user => user.id !== userId))
+                } else {
+                    alert('Failed to delete user')
+                }
+            } catch (err) {
+                alert('Error deleting user: ' + err.message)
+            }
+        }
+    }
+
+    // Format date
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        })
+    }
+
+    // Get badge variant based on role
+    const getRoleBadgeVariant = (role) => {
+        switch (role?.toLowerCase()) {
+            case 'admin':
+                return 'default'
+            case 'journalist':
+                return 'secondary'
+            case 'client':
+                return 'outline'
+            default:
+                return 'outline'
+        }
+    }
 
     // Mock data for pending articles
     const pendingArticles = [
@@ -86,7 +115,7 @@ export default function AdminDashboard() {
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
-                        <CardDescription className="text-2xl font-bold">1,245</CardDescription>
+                        <CardDescription className="text-2xl font-bold">{users.length}</CardDescription>
                     </CardHeader>
                 </Card>
                 <Card>
@@ -124,50 +153,71 @@ export default function AdminDashboard() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-4">
-                                {users.map((user) => (
-                                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                                        <div className="flex items-center gap-4">
-                                            <Avatar>
-                                                <AvatarImage src={`/placeholder.svg?height=50&width=50&text=${user.name.charAt(0)}`} />
-                                                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <h3 className="font-semibold">{user.name}</h3>
-                                                    <Badge
-                                                        variant={
-                                                            user.role === "admin"
-                                                                ? "default"
-                                                                : user.role === "journalist"
-                                                                    ? "secondary"
-                                                                    : user.role === "User"
-                                                                        ? "outline"
-                                                                        : "outline"
-                                                        }
-                                                    >
-                                                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                                                    </Badge>
-                                                </div>
-                                                <p className="text-sm text-muted-foreground">{user.email}</p>
-                                                <div className="flex items-center text-xs text-muted-foreground mt-1">
-                                                    {user.role === "journalist" && (
-                                                        <>
-                                                            <span>Articles: {user.articles}</span>
-                                                        </>
+                            {loading && (
+                                <div className="text-center py-8">
+                                    <p>Loading users...</p>
+                                </div>
+                            )}
+
+                            {error && (
+                                <div className="text-center py-8 text-red-500">
+                                    <p>Error: {error}</p>
+                                </div>
+                            )}
+
+                            {!loading && !error && (
+                                <div className="space-y-4">
+                                    {users.map((user) => (
+                                        <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                                            <div className="flex items-center gap-4">
+                                                <Avatar>
+                                                    <AvatarFallback>
+                                                        {user.firstName?.charAt(0) || user.email?.charAt(0) || '?'}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className="font-semibold">
+                                                            {user.firstName && user.lastName
+                                                                ? `${user.firstName} ${user.lastName}`
+                                                                : user.email
+                                                            }
+                                                        </h3>
+                                                        <Badge variant={getRoleBadgeVariant(user.role)}>
+                                                            {user.role || 'User'}
+                                                        </Badge>
+                                                    </div>
+                                                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                                                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                                                        <span>Joined: {formatDate(user.createdAt)}</span>
+                                                    </div>
+                                                    {user.bio && (
+                                                        <p className="text-xs text-muted-foreground mt-1 max-w-md truncate">
+                                                            {user.bio}
+                                                        </p>
                                                     )}
                                                 </div>
                                             </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleDeleteUser(user.id)}
+                                                >
+                                                    <Trash className="h-4 w-4 mr-1" />
+                                                    Delete
+                                                </Button>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="outline" size="sm">
-                                                <Trash className="h-4 w-4 mr-1" />
-                                                Delete
-                                            </Button>
+                                    ))}
+
+                                    {users.length === 0 && (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            <p>No users found</p>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    )}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -197,8 +247,8 @@ export default function AdminDashboard() {
                                                     </Link>
                                                 </Button>
                                                 <Button variant="outline" size="sm">
-                                                        <Brain className="h-4 w-4 mr-1" />
-                                                        Analyse with Ai
+                                                    <Brain className="h-4 w-4 mr-1" />
+                                                    Analyse with Ai
                                                 </Button>
                                                 <Button size="sm" className="bg-green-600 hover:bg-green-700">
                                                     <CheckCircle className="h-4 w-4 mr-1" />

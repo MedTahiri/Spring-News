@@ -9,8 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/user")
+@CrossOrigin(origins = "*")
 public class UserContoller {
 
     @Autowired
@@ -36,5 +39,11 @@ public class UserContoller {
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         UserResponse userResponse = userService.findUserById(id);
         return ResponseEntity.ok(userResponse);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        List<UserResponse> users = userService.findAllUsers();
+        return ResponseEntity.ok(users);
     }
 }

@@ -8,6 +8,9 @@ import com.spirng.news.springnewsbackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class UserService {
 
@@ -48,4 +51,11 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
     }
 
+    public List<UserResponse> findAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(user -> new UserResponse(user.getId(), user.getEmail(), user.getFirstName(),
+                        user.getLastName(), user.getRole(), user.getCreatedAt(), user.getBio()))
+                .collect(Collectors.toList());
+    }
 }
