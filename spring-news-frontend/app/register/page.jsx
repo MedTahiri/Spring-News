@@ -1,15 +1,12 @@
 "use client"
 
 import {useState} from "react"
-import Link from "next/link"
+import {useRouter} from "next/navigation"
 import {Button} from "@/components/ui/button"
 import {Input} from "@/components/ui/input"
 import {Label} from "@/components/ui/label"
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
-import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card"
-import {Register} from "@/services/userService";
-import {router} from "next/client";
-import {useRouter} from "next/navigation";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 
 export default function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false)
@@ -18,11 +15,35 @@ export default function RegisterPage() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
-    const [role, setRole] = useState("user")
+    const [role, setRole] = useState("Client")
     const [bio, setBio] = useState("")
     const [error, setError] = useState("")
 
     const router = useRouter()
+
+    const Register = async (firstname, lastname, email, password, role, bio) => {
+        const response = await fetch("http://localhost:8080/api/user/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                firstName: firstname,
+                lastName: lastname,
+                email : email,
+                password : password,
+                role: role,
+                bio : bio
+            })
+        })
+
+        if (!response.ok) {
+            const err = await response.text()
+            throw new Error(err || "Failed to register")
+        }
+
+        return await response.json()
+    }
 
     const handleRegister = async (e) => {
         e.preventDefault()
@@ -71,35 +92,35 @@ export default function RegisterPage() {
                                         <Label>Role</Label>
                                         <Tabs defaultValue={role} onValueChange={setRole}>
                                             <TabsList>
-                                                <TabsTrigger value="user">User</TabsTrigger>
-                                                <TabsTrigger value="journalist">Journalist</TabsTrigger>
+                                                <TabsTrigger value="Client">User</TabsTrigger>
+                                                <TabsTrigger value="Journalist">Journalist</TabsTrigger>
                                             </TabsList>
                                         </Tabs>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="register-email">Email</Label>
                                         <Input id="register-email" type="email" placeholder="name@example.com"
-                                               value={email} onChange={(e) => setEmail(e.target.value)}
-                                            required/>
+                                               value={email} onChange={(e) => setEmail(e.target.value)} required/>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="register-bio">Bio</Label>
                                         <Input id="register-bio" type="text" placeholder="bio"
-                                               value={bio} onChange={(e) => setBio(e.target.value)}
-                                               required/>
+                                               value={bio} onChange={(e) => setBio(e.target.value)} required/>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="register-password">Password</Label>
                                         <Input id="register-password" type="password"
-                                               value={password} onChange={(e) => setPassword(e.target.value)}
-                                               required/>
+                                               value={password} onChange={(e) => setPassword(e.target.value)} required/>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="confirm-password">Confirm Password</Label>
                                         <Input id="confirm-password" type="password"
-                                               value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                                               required/>
+                                               value={confirmPassword}
+                                               onChange={(e) => setConfirmPassword(e.target.value)} required/>
                                     </div>
+
+                                    {error && <p className="text-red-600 text-sm">{error}</p>}
+
                                     <Button type="submit" className="w-full bg-red-700 hover:bg-red-800"
                                             disabled={isLoading}>
                                         {isLoading ? "Creating account..." : "Create Account"}
