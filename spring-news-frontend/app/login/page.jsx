@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import {Login} from "@/services/userService";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("")
@@ -20,11 +19,35 @@ export default function LoginPage() {
         e.preventDefault()
         setError("")
         setIsLoading(true)
+
         try {
-            const user = await Login(email, password)
-            // Optionally redirect or show success
-            console.log("Logged in user:", user)
-            router.push("/") // or /dashboard
+            const response = await fetch('http://localhost:8080/api/user/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include', // Important: This allows cookies to be sent/received
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            })
+
+            if (!response.ok) {
+                throw new Error('Login failed')
+            }
+
+            const userData = await response.json()
+            console.log("Logged in user:", userData)
+
+            // Trigger header refresh immediately
+            window.dispatchEvent(new CustomEvent('auth-refresh'))
+
+            // Small delay to ensure cookie is set before redirect
+            setTimeout(() => {
+                router.push("/")
+            }, 500)
+
         } catch (err) {
             setError(err.message || "Failed to login")
         } finally {
@@ -72,6 +95,14 @@ export default function LoginPage() {
                                 </div>
                             </form>
                         </CardContent>
+                        <CardFooter>
+                            <p className="text-sm text-gray-600 text-center w-full">
+                                Don't have an account?{" "}
+                                <Link href="/register" className="text-red-700 hover:underline">
+                                    Sign up
+                                </Link>
+                            </p>
+                        </CardFooter>
                     </Card>
                 </div>
             </div>

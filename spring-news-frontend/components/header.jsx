@@ -21,7 +21,8 @@ import {useRouter} from "next/navigation";
 export default function Header() {
     const [showSearch, setShowSearch] = useState(false)
     const [isLoggedIn, setIsLoggedIn] = useState(false)
-    const [user, setUser] = useState({})
+    const [user, setUser] = useState(null)
+    const [isLoading, setIsLoading] = useState(true)
 
     const router = useRouter()
 
@@ -31,16 +32,65 @@ export default function Header() {
         day: "numeric"
     })
 
+    // Check authentication status using the /me endpoint
+    const checkAuthStatus = async () => {
+        try {
+            const response = await fetch('http://localhost:8080/api/user/me', {
+                method: 'GET',
+                credentials: 'include'
+            })
 
-    useEffect(() => {
-        const userCookie = Cookie.get("user")
-        if (userCookie) {
-            const parsedUser = JSON.parse(userCookie)
-            setUser(parsedUser)
-            setIsLoggedIn(true)
-        } else {
+            if (response.ok) {
+                const userData = await response.json()
+                console.log('User authenticated, data:', userData)
+                setUser(userData)
+                setIsLoggedIn(true)
+            } else if (response.status === 401) {
+                console.log('User not authenticated')
+                setIsLoggedIn(false)
+                setUser(null)
+            }
+        } catch (error) {
+            console.error('Error checking auth status:', error)
             setIsLoggedIn(false)
             setUser(null)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        // Initial auth check
+        checkAuthStatus()
+
+        // Set up periodic checks
+        const interval = setInterval(checkAuthStatus, 3000) // Check every 3 seconds
+
+        // Listen for focus events (when user comes back to tab)
+        const handleFocus = () => {
+            checkAuthStatus()
+        }
+
+        window.addEventListener('focus', handleFocus)
+
+        return () => {
+            clearInterval(interval)
+            window.removeEventListener('focus', handleFocus)
+        }
+    }, [])
+
+    // Add a manual refresh function that can be called from outside
+    useEffect(() => {
+        // Custom event listener for manual auth refresh
+        const handleAuthRefresh = () => {
+            console.log('Manual auth refresh triggered')
+            checkAuthStatus()
+        }
+
+        window.addEventListener('auth-refresh', handleAuthRefresh)
+
+        return () => {
+            window.removeEventListener('auth-refresh', handleAuthRefresh)
         }
     }, [])
 
@@ -48,10 +98,37 @@ export default function Header() {
         setShowSearch(!showSearch)
     }
 
-    const logout = () => {
-        Cookie.remove("user")
+    const logout = async () => {
+        try {
+            console.log('Logging out...')
+            await fetch('http://localhost:8080/api/user/logout', {
+                method: 'POST',
+                credentials: 'include'
+            })
+        } catch (error) {
+            console.error('Error during logout:', error)
+        }
+
         setIsLoggedIn(false)
+        setUser(null)
         router.push("/")
+    }
+
+    // Show loading state initially
+    if (isLoading) {
+        return (
+            <header className="border-b sticky top-0 bg-white z-50">
+                <div className="container mx-auto px-4">
+                    <div className="flex items-center justify-between py-2">
+                        <span className="text-xs text-muted-foreground hidden md:inline">{today}</span>
+                        <Link href="/" className="text-center">
+                            <h1 className="font-serif text-3xl font-bold tracking-tight">Spring News</h1>
+                        </Link>
+                        <div className="w-24">Loading...</div>
+                    </div>
+                </div>
+            </header>
+        )
     }
 
     return (
@@ -71,16 +148,20 @@ export default function Header() {
                                 <nav className="flex flex-col gap-4 mt-8">
                                     <div className="mt-auto pt-8">
                                         {isLoggedIn ? (
-                                            <Button oonClick={() => logout()} className="w-full" variant="outline">
+                                            <Button onClick={() => logout()} className="w-full" variant="outline">
                                                 Sign Out
                                             </Button>
                                         ) : (
                                             <div className="space-y-2">
                                                 <Button className="w-full">
-                                                    Sign In
+                                                    <Link href="/login">
+                                                        Sign In
+                                                    </Link>
                                                 </Button>
                                                 <Button variant="outline" className="w-full">
-                                                    Sign Up
+                                                    <Link href="/register">
+                                                        Sign Up
+                                                    </Link>
                                                 </Button>
                                             </div>
                                         )}
@@ -107,24 +188,33 @@ export default function Header() {
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="rounded-full">
                                             <Avatar className="h-8 w-8">
-                                                <AvatarFallback>{user.firstname[0] + user.lastname[0]}</AvatarFallback>
+                                                <AvatarFallback>
+                                                    {user && user.firstname && user.lastname
+                                                        ? user.firstname[0].toUpperCase() + user.lastname[0].toUpperCase()
+                                                        : 'U'
+                                                    }
+                                                </AvatarFallback>
                                             </Avatar>
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>
+                                            {user && user.firstname ? `${user.firstname} ${user.lastname || ''}` : 'User'}
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
                                         <DropdownMenuItem>
-                                            <Link href={"/profile/"+user.id} className="flex w-full">
+                                            <Link href={"/profile/"+(user?.id || '')} className="flex w-full">
                                                 Profile
                                             </Link>
                                         </DropdownMenuItem>
-                                        {user.role === "journalist" &&
+                                        {user?.role === "journalist" &&
                                             <DropdownMenuItem>
                                                 <Link href="/journalist" className="flex w-full">
                                                     Journalist Dashboard
                                                 </Link>
                                             </DropdownMenuItem>
                                         }
-                                        {user.role === "admin" &&
+                                        {user?.role === "admin" &&
                                             <DropdownMenuItem>
                                                 <Link href="/admin" className="flex w-full">
                                                     Admin Panel

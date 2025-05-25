@@ -36,6 +36,7 @@ public class ArticleResponse {
         this.views = article.getViews();
         this.link = article.getLink();
         this.status = article.getStatus();
+        this.createdAt = article.getPublicationDate();
     }
 
     // Inner class to send minimal user info in author field

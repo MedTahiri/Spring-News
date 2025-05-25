@@ -1,53 +1,97 @@
-import Cookie from "js-cookie"
+// services/userService.js
 
-const userList = [
-    {
-        id: "1",
-        firstname: "Natalie",
-        lastname: "Kim",
-        email: "test@gmail.com",
-        password: "123456",
-        role: "journalist",
-        bio: "Natalie Kim reports on economic policy and small business affairs, with a decade of experience covering financial legislation and commerce news."
-    },{
-    id: "2",
-        firstname: "Mohamed",
-        lastname: "Tahiri",
-        email: "test@gmail.com",
-        password: "123456",
-        role: "user",
-        bio:"software developer"
-    }
-]
+const API_BASE_URL = 'http://localhost:8080/api/user'
 
-export async function Login(email, password) {
-    const user = userList.find(
-        (user) => user.email === email && user.password === password
-    )
+// Login function
+export const Login = async (email, password) => {
+    const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Important for cookies
+        body: JSON.stringify({ email, password })
+    })
 
-    if (!user) {
-        throw new Error("Invalid email or password")
+    if (!response.ok) {
+        throw new Error('Login failed')
     }
 
-    Cookie.set("user", JSON.stringify(user), {expires: 7})
-
-    return user
+    return await response.json()
 }
 
-export async function Register(firstname, lastname, email, password,role, bio) {
-    const id = (userList.length + 1).toString()
+// Register function
+export const Register = async (name, email, password) => {
+    const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Important for cookies
+        body: JSON.stringify({ name, email, password })
+    })
 
-    userList.push({id,firstname,lastname,email,password,role,bio})
+    if (!response.ok) {
+        throw new Error('Registration failed')
+    }
 
-    Cookie.set("user", JSON.stringify({id,firstname,lastname,email,password,role,bio}), {expires: 7})
-
-    return {id,firstname,lastname,email,password,role,bio}
+    return await response.json()
 }
 
-export async function getUserById(userId){
-    return userList.find((user) => user.id === userId)
+// Logout function
+export const Logout = async () => {
+    const response = await fetch(`${API_BASE_URL}/logout`, {
+        method: 'POST',
+        credentials: 'include', // Important for cookies
+    })
+
+    if (!response.ok) {
+        throw new Error('Logout failed')
+    }
+
+    return true
 }
 
-export async function getAllUsers() {
-    return userList
+// Get current user (using cookie)
+export const GetCurrentUser = async () => {
+    const response = await fetch(`${API_BASE_URL}/me`, {
+        method: 'GET',
+        credentials: 'include', // Important for cookies
+    })
+
+    if (!response.ok) {
+        if (response.status === 401) {
+            throw new Error('Not authenticated')
+        }
+        throw new Error('Failed to get user')
+    }
+
+    return await response.json()
+}
+
+// Get all users (requires authentication)
+export const GetAllUsers = async () => {
+    const response = await fetch(`${API_BASE_URL}/all`, {
+        method: 'GET',
+        credentials: 'include', // Important for cookies
+    })
+
+    if (!response.ok) {
+        if (response.status === 401) {
+            throw new Error('Not authenticated')
+        }
+        throw new Error('Failed to get users')
+    }
+
+    return await response.json()
+}
+
+export async function getUserById(id) {
+    const response = await fetch(`http://localhost:8080/api/user/find/${id}`, {
+        credentials: 'include'
+    });
+    if (!response.ok) {
+        throw new Error('Failed to fetch user by id');
+    }
+    return await response.json();
 }

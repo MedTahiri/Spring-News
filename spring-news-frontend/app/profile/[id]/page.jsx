@@ -3,22 +3,43 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import {Badge} from "@/components/ui/badge"
 import {User, ShieldCheck, PenLine} from "lucide-react"
-import {use, useEffect, useState} from "react";
-import {getUserById} from "@/services/userService";
+import {useEffect, useState} from "react";
+import {useRouter} from "next/navigation"
 
-export default function ProfilePage({params}) {
-
-    const {id} = use(params)
-
+export default function ProfilePage() {
+    const router = useRouter()
     const [user, setUser] = useState({})
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        getUserById(id).then(setUser)
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    },[id])
+        const fetchCurrentUser = async () => {
+            try {
+                const response = await fetch('http://localhost:8080/api/user/me', {
+                    credentials: 'include' // Include cookies
+                })
 
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // User not authenticated
+                        router.push('/login')
+                        return
+                    }
+                    throw new Error('Failed to fetch user data')
+                }
+
+                const userData = await response.json()
+                setUser(userData)
+            } catch (err) {
+                console.error('Error fetching user:', err)
+                setError(err.message)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchCurrentUser()
+    }, [router])
 
     // Role-based badge and description
     const roleMeta = {
@@ -42,17 +63,43 @@ export default function ProfilePage({params}) {
         },
     }
 
-    const role = user?.role
+    const role = user?.role?.toLowerCase() || 'user'
     const meta = roleMeta[role] || roleMeta.user
 
-    if (loading) return <p>Loading...</p>;
+    if (loading) {
+        return (
+            <div className="container mx-auto px-4 py-8">
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                        <p className="text-muted-foreground">Loading profile...</p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="container mx-auto px-4 py-8">
+                <div className="text-center py-8 text-red-500">
+                    <p>Error loading profile: {error}</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-6">User Profile</h1>
+            <h1 className="text-3xl font-bold mb-6">My Profile</h1>
             <Card className="max-w-xl">
                 <CardHeader>
-                    <CardTitle>{user?.firstname + user?.lastname}</CardTitle>
+                    <CardTitle>
+                        {user?.firstName && user?.lastName
+                            ? `${user.firstName} ${user.lastName}`
+                            : user?.email || 'Unknown User'
+                        }
+                    </CardTitle>
                     <CardDescription>{user?.email}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -65,6 +112,16 @@ export default function ProfilePage({params}) {
                         <div>
                             <h3 className="font-semibold text-sm mt-4 mb-1">Bio</h3>
                             <p>{user?.bio}</p>
+                        </div>
+                    )}
+                    {user?.createdAt && (
+                        <div>
+                            <h3 className="font-semibold text-sm mt-4 mb-1">Member Since</h3>
+                            <p>{new Date(user.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            })}</p>
                         </div>
                     )}
                 </CardContent>

@@ -7,6 +7,7 @@ import com.spirng.news.springnewsbackend.model.User;
 import com.spirng.news.springnewsbackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.spirng.news.springnewsbackend.enums.Role;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,4 +59,36 @@ public class UserService {
                         user.getLastName(), user.getRole(), user.getCreatedAt(), user.getBio()))
                 .collect(Collectors.toList());
     }
+
+    private UserResponse mapToUserResponse(User user) {
+        return new UserResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getRole(),
+                user.getCreatedAt(),
+                user.getBio()
+        );
+    }
+
+
+    public List<UserResponse> findNonAdminUsers() {
+        List<User> users = userRepository.findAll();
+
+        List<User> nonAdmins = users.stream()
+                .filter(user -> user.getRole() == Role.Client || user.getRole() == Role.Journalist)
+                .toList();
+
+        return nonAdmins.stream()
+                .map(this::mapToUserResponse)
+                .toList();
+    }
+
+    public boolean isUserAdmin(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+        return user.getRole() == Role.Admin;
+    }
+
 }

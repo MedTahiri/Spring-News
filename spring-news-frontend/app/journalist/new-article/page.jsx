@@ -1,6 +1,6 @@
 "use client"
 
-import {useState} from "react"
+import {useState, useEffect} from "react"
 import Link from "next/link"
 import {Button} from "@/components/ui/button"
 import {Input} from "@/components/ui/input"
@@ -13,6 +13,8 @@ import {ArrowLeft, ImageIcon, Save} from "lucide-react"
 
 export default function NewArticlePage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isLoadingUser, setIsLoadingUser] = useState(true)
+    const [userError, setUserError] = useState("")
     const [formData, setFormData] = useState({
         title: "",
         resume: "",
@@ -20,10 +22,45 @@ export default function NewArticlePage() {
         image: "",
         content: "",
         tags: "",
-        authorId: 0, // must be the ID saved after the login
+        authorId: 0,
         link: ""
     })
     const [submitMessage, setSubmitMessage] = useState("")
+
+    // Fetch current user from cookie on component mount
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                const response = await fetch('http://localhost:8080/api/user/me', {
+                    method: 'GET',
+                    credentials: 'include', // Include cookies in the request
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                })
+
+                if (response.ok) {
+                    const userData = await response.json()
+                    setFormData(prev => ({
+                        ...prev,
+                        authorId: userData.id
+                    }))
+                    setUserError("")
+                } else if (response.status === 401) {
+                    setUserError("You must be logged in to create an article")
+                } else {
+                    setUserError("Failed to get user information")
+                }
+            } catch (error) {
+                console.error('Error fetching user:', error)
+                setUserError("Network error while getting user information")
+            } finally {
+                setIsLoadingUser(false)
+            }
+        }
+
+        fetchCurrentUser()
+    }, [])
 
     const handleInputChange = (field, value) => {
         setFormData(prev => ({
@@ -48,6 +85,13 @@ export default function NewArticlePage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+
+        // Check if we have a valid authorId
+        if (!formData.authorId || formData.authorId === 0) {
+            setSubmitMessage("Error: User authentication required. Please refresh the page and try again.")
+            return
+        }
+
         setIsSubmitting(true)
         setSubmitMessage("")
 
@@ -78,7 +122,7 @@ export default function NewArticlePage() {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                 },
-                mode: 'cors', // Explicitly set CORS mode
+                credentials: 'include', // Include cookies in the request
                 body: JSON.stringify(payload)
             })
 
@@ -86,6 +130,18 @@ export default function NewArticlePage() {
                 const result = await response.json()
                 setSubmitMessage("Article submitted successfully!")
                 console.log('Success:', result)
+
+                // reset form
+                // setFormData({
+                //     title: "",
+                //     resume: "",
+                //     theme: "",
+                //     image: "",
+                //     content: "",
+                //     tags: "",
+                //     authorId: formData.authorId, // Keep the authorId
+                //     link: ""
+                // })
 
             } else {
                 const errorData = await response.text()
@@ -112,6 +168,44 @@ export default function NewArticlePage() {
         "OPINION",
         "EDUCATION",
     ]
+
+    // Show loading or error state if user is not authenticated
+    if (isLoadingUser) {
+        return (
+            <main className="min-h-screen bg-gray-50">
+                <div className="container mx-auto px-4 py-8">
+                    <div className="flex items-center justify-center h-64">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-700 mx-auto mb-4"></div>
+                            <p className="text-gray-600">Loading user information...</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        )
+    }
+
+    if (userError) {
+        return (
+            <main className="min-h-screen bg-gray-50">
+                <div className="container mx-auto px-4 py-8">
+                    <div className="flex items-center justify-center h-64">
+                        <Card className="w-full max-w-md">
+                            <CardHeader>
+                                <CardTitle className="text-red-600">Authentication Required</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-gray-600 mb-4">{userError}</p>
+                                <Button asChild className="w-full">
+                                    <Link href="/login">Go to Login</Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </main>
+        )
+    }
 
     return (
         <main className="min-h-screen bg-gray-50">
@@ -234,15 +328,13 @@ export default function NewArticlePage() {
                                         />
                                     </div>
 
+                                    {/* Author ID display (read-only) */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="authorId">Author ID</Label>
-                                        <Input
-                                            id="authorId"
-                                            type="number"
-                                            placeholder="Author ID"
-                                            value={formData.authorId}
-                                            onChange={(e) => handleInputChange('authorId', parseInt(e.target.value) || 8)}
-                                        />
+                                        <Label>Author ID</Label>
+                                        <div className="px-3 py-2 bg-gray-100 rounded-md text-sm text-gray-700">
+                                            {formData.authorId || 'Loading...'}
+                                        </div>
+                                        <p className="text-xs text-gray-500">Automatically set from your login session</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -257,7 +349,7 @@ export default function NewArticlePage() {
                                     type="submit"
                                     className="w-full bg-red-700 hover:bg-red-800"
                                     onClick={handleSubmit}
-                                    disabled={isSubmitting}
+                                    disabled={isSubmitting || !formData.authorId}
                                 >
                                     {isSubmitting ? "Submitting..." : "Submit Article"}
                                 </Button>
@@ -273,8 +365,6 @@ export default function NewArticlePage() {
                                 )}
                             </CardContent>
                         </Card>
-
-
                     </div>
                 </div>
             </div>

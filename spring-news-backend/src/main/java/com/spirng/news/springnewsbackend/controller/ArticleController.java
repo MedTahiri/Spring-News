@@ -22,7 +22,7 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/api/articles")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class ArticleController {
 
     @Autowired

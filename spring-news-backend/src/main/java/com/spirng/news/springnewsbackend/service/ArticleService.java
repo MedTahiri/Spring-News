@@ -3,9 +3,11 @@ package com.spirng.news.springnewsbackend.service;
 import com.spirng.news.springnewsbackend.enums.ArticleStatus;
 import com.spirng.news.springnewsbackend.model.Article;
 import com.spirng.news.springnewsbackend.repository.ArticleRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -45,6 +47,15 @@ public class ArticleService {
     public Article getArticleById(Long id) {
         return articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Article not found with id: " + id));
+    }
+
+    @Transactional
+    public void updateNullPublicationDates() {
+        List<Article> articlesWithNullDates = articleRepository.findByPublicationDateIsNull();
+        for (Article article : articlesWithNullDates) {
+            article.setPublicationDate(LocalDateTime.now());
+            articleRepository.save(article);
+        }
     }
 
 }

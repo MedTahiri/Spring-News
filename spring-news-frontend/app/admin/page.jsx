@@ -9,61 +9,118 @@ import {CheckCircle, Trash, Brain, Eye, Flag, Lock, Plus, Shield, User, XCircle}
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function AdminDashboard() {
+    const router = useRouter()
     const [users, setUsers] = useState([])
     const [pendingArticles, setPendingArticles] = useState([])
     const [loading, setLoading] = useState(true)
     const [articlesLoading, setArticlesLoading] = useState(true)
     const [error, setError] = useState(null)
     const [articlesError, setArticlesError] = useState(null)
+    const [authChecking, setAuthChecking] = useState(true)
+    const [isAdmin, setIsAdmin] = useState(false)
+    const [currentUser, setCurrentUser] = useState(null)
 
-
+    // Check if user is admin on component mount
     useEffect(() => {
-        const fetchUsers = async () => {
+        const checkAdminStatus = async () => {
             try {
-                const response = await fetch('http://localhost:8080/api/user/all')
-                if (!response.ok) {
-                    throw new Error('Failed to fetch users')
+                // get current user
+                const userResponse = await fetch('http://localhost:8080/api/user/me', {
+                    credentials: 'include' // Include cookies
+                })
+
+                if (!userResponse.ok) {
+                    router.push('/')
+                    return
                 }
-                const userData = await response.json()
-                setUsers(userData)
+
+                const userData = await userResponse.json()
+                setCurrentUser(userData)
+
+                // Check if user is admin
+                const adminResponse = await fetch(`http://localhost:8080/api/user/is-admin/${userData.id}`, {
+                    credentials: 'include'
+                })
+
+                if (adminResponse.ok) {
+                    const adminStatus = await adminResponse.json()
+                    setIsAdmin(adminStatus)
+
+                    if (!adminStatus) {
+                        router.push('/')
+                        return
+                    }
+                } else {
+                    router.push('/')
+                    return
+                }
             } catch (err) {
-                setError(err.message)
+                console.error('Error checking admin status:', err)
+                router.push('/')
+                return
             } finally {
-                setLoading(false)
+                setAuthChecking(false)
             }
         }
 
-        fetchUsers()
-    }, [])
-
+        checkAdminStatus()
+    }, [router])
 
     useEffect(() => {
-        const fetchPendingArticles = async () => {
-            try {
-                const response = await fetch('http://localhost:8080/api/articles/pending')
-                if (!response.ok) {
-                    throw new Error('Failed to fetch pending articles')
+        // Only fetch users if user is confirmed admin
+        if (!authChecking && isAdmin) {
+            const fetchUsers = async () => {
+                try {
+                    const response = await fetch('http://localhost:8080/api/user/non-admins', {
+                        credentials: 'include'
+                    })
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch users')
+                    }
+                    const userData = await response.json()
+                    setUsers(userData)
+                } catch (err) {
+                    setError(err.message)
+                } finally {
+                    setLoading(false)
                 }
-                const articlesData = await response.json()
-                setPendingArticles(articlesData)
-            } catch (err) {
-                setArticlesError(err.message)
-            } finally {
-                setArticlesLoading(false)
             }
+
+            fetchUsers()
         }
+    }, [authChecking, isAdmin])
 
-        fetchPendingArticles()
-    }, [])
+    useEffect(() => {
+        // Only fetch articles if user is confirmed admin
+        if (!authChecking && isAdmin) {
+            const fetchPendingArticles = async () => {
+                try {
+                    const response = await fetch('http://localhost:8080/api/articles/pending')
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch pending articles')
+                    }
+                    const articlesData = await response.json()
+                    setPendingArticles(articlesData)
+                } catch (err) {
+                    setArticlesError(err.message)
+                } finally {
+                    setArticlesLoading(false)
+                }
+            }
 
+            fetchPendingArticles()
+        }
+    }, [authChecking, isAdmin])
 
     const handleDeleteUser = async (userId) => {
         if (window.confirm('Are you sure you want to delete this user?')) {
             try {
                 const response = await fetch(`http://localhost:8080/api/user/delete/${userId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    credentials: 'include'
                 })
                 if (response.ok) {
                     // Remove user from state
@@ -149,12 +206,35 @@ export default function AdminDashboard() {
         return themeMap[theme] || { name: theme, variant: 'outline' }
     }
 
+    // Show loading while checking authentication
+    if (authChecking) {
+        return (
+            <div className="container mx-auto px-4 py-8">
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                        <p className="text-muted-foreground">Checking permissions...</p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // This component will only render if the user is an admin
+    // Non-admin users will be redirected before reaching this point
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-                    <p className="text-muted-foreground">Manage users, content</p>
+                    <p className="text-muted-foreground">
+                        Manage users, content
+                        {currentUser && (
+                            <span className="ml-2">
+                                • Welcome, {currentUser.firstName} {currentUser.lastName}
+                            </span>
+                        )}
+                    </p>
                 </div>
             </div>
 
