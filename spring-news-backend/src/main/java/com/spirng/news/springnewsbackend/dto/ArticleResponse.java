@@ -44,12 +44,14 @@ public class ArticleResponse {
         private String firstName;
         private String lastName;
         private String email;
+        private String bio;
 
         public UserSummary(User user) {
             this.id = user.getId();
             this.firstName = user.getFirstName();
             this.lastName = user.getLastName();
             this.email = user.getEmail();
+            this.bio = user.getBio();
         }
 
         public Long getId() {
@@ -83,12 +85,15 @@ public class ArticleResponse {
         public void setEmail(String email) {
             this.email = email;
         }
+        public String getBio() {return bio;}
+        public void setBio(String bio) {this.bio = bio;}
 
-        public UserSummary(Long id, String firstName, String lastName, String email) {
+        public UserSummary(Long id, String firstName, String lastName, String email, String bio) {
             this.id = id;
             this.firstName = firstName;
             this.lastName = lastName;
             this.email = email;
+            this.bio = bio;
         }
 
         public UserSummary() {

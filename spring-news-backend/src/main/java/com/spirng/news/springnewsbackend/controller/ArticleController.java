@@ -66,4 +66,67 @@ public class ArticleController {
         ArticleResponse response = new ArticleResponse(savedArticle);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<ArticleResponse>> getAllArticles() {
+        List<Article> articles = articleService.getAllArticles();
+        List<ArticleResponse> responses = new ArrayList<>();
+
+        for (Article article : articles) {
+            responses.add(new ArticleResponse(article));
+        }
+
+        return new ResponseEntity<>(responses, HttpStatus.OK);
+    }
+
+    @GetMapping("/pending")
+    public ResponseEntity<List<ArticleResponse>> getPendingArticles() {
+        List<Article> pendingArticles = articleService.getArticlesByStatus(ArticleStatus.PENDING);
+        List<ArticleResponse> responses = new ArrayList<>();
+        for (Article article : pendingArticles) {
+            responses.add(new ArticleResponse(article));
+        }
+        return new ResponseEntity<>(responses, HttpStatus.OK);
+    }
+
+    @GetMapping("/published")
+    public ResponseEntity<List<ArticleResponse>> getPublishedArticles() {
+        List<Article> publishedArticles = articleService.getArticlesByStatus(ArticleStatus.PUBLISHED);
+        List<ArticleResponse> responses = new ArrayList<>();
+        for (Article article : publishedArticles) {
+            responses.add(new ArticleResponse(article));
+        }
+        return new ResponseEntity<>(responses, HttpStatus.OK);
+    }
+
+    @PostMapping("/{id}/publish")
+    public ResponseEntity<ArticleResponse> publishArticle(@PathVariable Long id) {
+        Article updatedArticle = articleService.updateArticleStatus(id, ArticleStatus.PUBLISHED);
+        ArticleResponse response = new ArticleResponse(updatedArticle);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/{id}/refuse")
+    public ResponseEntity<ArticleResponse> refuseArticle(@PathVariable Long id) {
+        Article updatedArticle = articleService.updateArticleStatus(id, ArticleStatus.REFUSED);
+        ArticleResponse response = new ArticleResponse(updatedArticle);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/author/{authorId}")
+    public ResponseEntity<List<ArticleResponse>> getArticlesByAuthor(@PathVariable Long authorId) {
+        List<Article> articles = articleService.getArticlesByAuthorId(authorId);
+        List<ArticleResponse> responses = new ArrayList<>();
+        for (Article article : articles) {
+            responses.add(new ArticleResponse(article));
+        }
+        return new ResponseEntity<>(responses, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ArticleResponse> getArticleById(@PathVariable Long id) {
+        Article article = articleService.getArticleById(id);
+        ArticleResponse response = new ArticleResponse(article);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }

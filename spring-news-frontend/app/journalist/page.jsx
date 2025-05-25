@@ -15,12 +15,24 @@ export default function JournalistDashboard() {
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
-        const userId = JSON.parse(Cookie.get("user")).id;
-        getAllNewsByJournalist(userId)
-            .then((res) => setArticles(Array.isArray(res) ? res : [res].filter(Boolean)))
-            .catch(console.error)
-            .finally(() => setLoading(false));
+        const userCookie = Cookie.get("user");
+        if (!userCookie) {
+            console.error("User cookie not found.");
+            return;
+        }
+
+        try {
+            const user = JSON.parse(userCookie);
+            const userId = user.id;
+            getAllNewsByJournalist(userId)
+                .then((res) => setArticles(Array.isArray(res) ? res : [res].filter(Boolean)))
+                .catch(console.error)
+                .finally(() => setLoading(false));
+        } catch (error) {
+            console.error("Invalid user cookie JSON:", error);
+        }
     }, []);
+
 
     if (loading) return <p>Loading...</p>
 

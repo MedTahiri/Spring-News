@@ -12,10 +12,13 @@ import { useState, useEffect } from "react"
 
 export default function AdminDashboard() {
     const [users, setUsers] = useState([])
+    const [pendingArticles, setPendingArticles] = useState([])
     const [loading, setLoading] = useState(true)
+    const [articlesLoading, setArticlesLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [articlesError, setArticlesError] = useState(null)
 
-    // Fetch users from API
+
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -35,7 +38,27 @@ export default function AdminDashboard() {
         fetchUsers()
     }, [])
 
-    // Delete user function
+
+    useEffect(() => {
+        const fetchPendingArticles = async () => {
+            try {
+                const response = await fetch('http://localhost:8080/api/articles/pending')
+                if (!response.ok) {
+                    throw new Error('Failed to fetch pending articles')
+                }
+                const articlesData = await response.json()
+                setPendingArticles(articlesData)
+            } catch (err) {
+                setArticlesError(err.message)
+            } finally {
+                setArticlesLoading(false)
+            }
+        }
+
+        fetchPendingArticles()
+    }, [])
+
+
     const handleDeleteUser = async (userId) => {
         if (window.confirm('Are you sure you want to delete this user?')) {
             try {
@@ -54,8 +77,45 @@ export default function AdminDashboard() {
         }
     }
 
+    const handleApproveArticle = async (articleId) => {
+        try {
+            const response = await fetch(`http://localhost:8080/api/articles/${articleId}/publish`, {
+                method: 'POST'
+            })
+            if (response.ok) {
+                // Remove article from pending list
+                setPendingArticles(pendingArticles.filter(article => article.id !== articleId))
+                alert('Article approved successfully!')
+            } else {
+                alert('Failed to approve article')
+            }
+        } catch (err) {
+            alert('Error approving article: ' + err.message)
+        }
+    }
+
+    const handleRejectArticle = async (articleId) => {
+        if (window.confirm('Are you sure you want to reject this article?')) {
+            try {
+                const response = await fetch(`http://localhost:8080/api/articles/${articleId}/refuse`, {
+                    method: 'POST'
+                })
+                if (response.ok) {
+                    // Remove article from pending list
+                    setPendingArticles(pendingArticles.filter(article => article.id !== articleId))
+                    alert('Article rejected successfully!')
+                } else {
+                    alert('Failed to reject article')
+                }
+            } catch (err) {
+                alert('Error rejecting article: ' + err.message)
+            }
+        }
+    }
+
     // Format date
     const formatDate = (dateString) => {
+        if (!dateString) return 'N/A'
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
@@ -63,7 +123,6 @@ export default function AdminDashboard() {
         })
     }
 
-    // Get badge variant based on role
     const getRoleBadgeVariant = (role) => {
         switch (role?.toLowerCase()) {
             case 'admin':
@@ -77,30 +136,18 @@ export default function AdminDashboard() {
         }
     }
 
-    // Mock data for pending articles
-    const pendingArticles = [
-        {
-            id: "1",
-            title: "Healthcare Reform Bill Faces Uncertain Future in Congress",
-            author: "Sarah Johnson",
-            category: "Health",
-            submittedDate: "May 13, 2025",
-        },
-        {
-            id: "2",
-            title: "New Study Reveals Impact of Climate Change on Coastal Cities",
-            author: "Michael Chen",
-            category: "Environment",
-            submittedDate: "May 14, 2025",
-        },
-        {
-            id: "3",
-            title: "Tech Industry Responds to New Privacy Regulations",
-            author: "David Lee",
-            category: "Technology",
-            submittedDate: "May 15, 2025",
-        },
-    ]
+    // Get theme display name and badge variant
+    const getThemeInfo = (theme) => {
+        const themeMap = {
+            'TECHNOLOGY': { name: 'Technology', variant: 'default' },
+            'HEALTH': { name: 'Health', variant: 'secondary' },
+            'ENVIRONMENT': { name: 'Environment', variant: 'outline' },
+            'POLITICS': { name: 'Politics', variant: 'destructive' },
+            'BUSINESS': { name: 'Business', variant: 'secondary' },
+            'SPORTS': { name: 'Sports', variant: 'outline' }
+        }
+        return themeMap[theme] || { name: theme, variant: 'outline' }
+    }
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -127,7 +174,7 @@ export default function AdminDashboard() {
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Pending Articles</CardTitle>
-                        <CardDescription className="text-2xl font-bold">12</CardDescription>
+                        <CardDescription className="text-2xl font-bold">{pendingArticles.length}</CardDescription>
                     </CardHeader>
                 </Card>
                 <Card>
@@ -230,38 +277,106 @@ export default function AdminDashboard() {
                                 <CardDescription>Articles awaiting approval</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="space-y-4">
-                                    {pendingArticles.map((article) => (
-                                        <div key={article.id} className="p-4 border rounded-lg">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <Badge variant="outline">{article.category}</Badge>
-                                                <span className="text-sm text-muted-foreground">Submitted: {article.submittedDate}</span>
+                                {articlesLoading && (
+                                    <div className="text-center py-8">
+                                        <p>Loading pending articles...</p>
+                                    </div>
+                                )}
+
+                                {articlesError && (
+                                    <div className="text-center py-8 text-red-500">
+                                        <p>Error: {articlesError}</p>
+                                    </div>
+                                )}
+
+                                {!articlesLoading && !articlesError && (
+                                    <div className="space-y-4">
+                                        {pendingArticles.map((article) => {
+                                            const themeInfo = getThemeInfo(article.theme)
+                                            return (
+                                                <div key={article.id} className="p-4 border rounded-lg">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge variant={themeInfo.variant}>{themeInfo.name}</Badge>
+                                                            <Badge variant="outline">ID: {article.id}</Badge>
+                                                            {article.tags && article.tags.length > 0 && (
+                                                                <div className="flex gap-1">
+                                                                    {article.tags.slice(0, 2).map((tag) => (
+                                                                        <Badge key={tag.id} variant="secondary" className="text-xs">
+                                                                            {tag.name}
+                                                                        </Badge>
+                                                                    ))}
+                                                                    {article.tags.length > 2 && (
+                                                                        <Badge variant="secondary" className="text-xs">
+                                                                            +{article.tags.length - 2}
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-sm text-muted-foreground">
+                                                            Submitted: {formatDate(article.createdAt)}
+                                                        </span>
+                                                    </div>
+                                                    <h3 className="font-semibold mb-1">{article.title}</h3>
+                                                    <p className="text-sm text-muted-foreground mb-2">
+                                                        By: {article.author.firstName} {article.author.lastName} ({article.author.email})
+                                                    </p>
+                                                    {article.resume && (
+                                                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                                                            {article.resume}
+                                                        </p>
+                                                    )}
+                                                    <div className="flex items-center text-xs text-muted-foreground mb-3">
+                                                        <span>Views: {article.views}</span>
+                                                        <span className="mx-2">•</span>
+                                                        <span>Status: {article.status}</span>
+                                                        {article.link && (
+                                                            <>
+                                                                <span className="mx-2">•</span>
+                                                                <span>Link: {article.link}</span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Button variant="outline" size="sm" asChild>
+                                                            <Link href={`/article/${article.id}`}>
+                                                                <Eye className="h-4 w-4 mr-1" />
+                                                                Preview
+                                                            </Link>
+                                                        </Button>
+                                                        <Button variant="outline" size="sm">
+                                                            <Brain className="h-4 w-4 mr-1" />
+                                                            Analyse with AI
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            className="bg-green-600 hover:bg-green-700"
+                                                            onClick={() => handleApproveArticle(article.id)}
+                                                        >
+                                                            <CheckCircle className="h-4 w-4 mr-1" />
+                                                            Approve
+                                                        </Button>
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            onClick={() => handleRejectArticle(article.id)}
+                                                        >
+                                                            <XCircle className="h-4 w-4 mr-1" />
+                                                            Reject
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+
+                                        {pendingArticles.length === 0 && (
+                                            <div className="text-center py-8 text-muted-foreground">
+                                                <p>No pending articles found</p>
                                             </div>
-                                            <h3 className="font-semibold mb-1">{article.title}</h3>
-                                            <p className="text-sm text-muted-foreground mb-3">By: {article.author}</p>
-                                            <div className="flex items-center gap-2">
-                                                <Button variant="outline" size="sm" asChild>
-                                                    <Link href={`/article/preview/${article.id}`}>
-                                                        <Eye className="h-4 w-4 mr-1" />
-                                                        Preview
-                                                    </Link>
-                                                </Button>
-                                                <Button variant="outline" size="sm">
-                                                    <Brain className="h-4 w-4 mr-1" />
-                                                    Analyse with Ai
-                                                </Button>
-                                                <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                                    Approve
-                                                </Button>
-                                                <Button variant="destructive" size="sm">
-                                                    <XCircle className="h-4 w-4 mr-1" />
-                                                    Reject
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                        )}
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
