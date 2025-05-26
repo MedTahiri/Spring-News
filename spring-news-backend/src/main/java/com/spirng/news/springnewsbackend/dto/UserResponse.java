@@ -1,6 +1,7 @@
 package com.spirng.news.springnewsbackend.dto;
 
 import com.spirng.news.springnewsbackend.enums.Role;
+import com.spirng.news.springnewsbackend.model.User;
 
 import java.time.LocalDateTime;
 
@@ -24,6 +25,15 @@ public class UserResponse {
         this.role = role;
         this.createdAt = createdAt;
         this.bio = bio;
+    }
+    public UserResponse(User user) {
+        this.id = user.getId();
+        this.email = user.getEmail();
+        this.firstName = user.getFirstName();
+        this.lastName = user.getLastName();
+        this.role = user.getRole();
+        this.createdAt = user.getCreatedAt();
+        this.bio = user.getBio();
     }
 
     public Long getId() {

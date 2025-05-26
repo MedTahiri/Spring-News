@@ -1,194 +1,265 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Reply, Trash } from "lucide-react"
+import { MessageCircle, Send, Trash2 } from "lucide-react"
 
-export default function CommentSection({ articleId }) {
-    const [commentText, setCommentText] = useState("")
-    const [replyText, setReplyText] = useState("")
-    const [activeReplyId, setActiveReplyId] = useState(null)
+const CommentSection = ({ articleId }) => {
+    const [comments, setComments] = useState([])
+    const [newComment, setNewComment] = useState('')
+    const [currentUser, setCurrentUser] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [submitting, setSubmitting] = useState(false)
 
-    const [comments, setComments] = useState([
-        {
-            id: "1",
-            author: {
-                name: "John Smith",
-                avatar: "/placeholder.svg?height=50&width=50&text=JS",
-                initials: "JS",
-            },
-            content: "This is a significant step forward for our country's infrastructure.",
-            timestamp: "2 hours ago",
-            likes: 24,
-            replies: [],
-        },
-        {
-            id: "2",
-            author: {
-                name: "Emily Wilson",
-                avatar: "/placeholder.svg?height=50&width=50&text=EW",
-                initials: "EW",
-            },
-            content: "I'm excited about the broadband investments!",
-            timestamp: "5 hours ago",
-            likes: 32,
-            replies: [],
-        },
-    ])
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
-    const handleCommentSubmit = () => {
-        if (!commentText.trim()) return
-
-        const newComment = {
-            id: `${Date.now()}`,
-            author: {
-                name: "Current User",
-                avatar: "/placeholder.svg?height=50&width=50&text=CU",
-                initials: "CU",
-            },
-            content: commentText,
-            timestamp: "Just now",
-            likes: 0,
-            replies: [],
+    // current user
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/user/me`, {
+                    credentials: 'include'
+                })
+                if (response.ok) {
+                    const userData = await response.json()
+                    setCurrentUser(userData)
+                }
+            } catch (error) {
+                console.error('Error fetching current user:', error)
+            }
         }
 
-        setComments([newComment, ...comments])
-        setCommentText("")
+        fetchCurrentUser()
+    }, [API_BASE_URL])
+
+    // fetch comments
+    useEffect(() => {
+        const fetchComments = async () => {
+            try {
+                setLoading(true)
+                const response = await fetch(`${API_BASE_URL}/api/comments/article/${articleId}`)
+                if (response.ok) {
+                    const commentsData = await response.json()
+                    setComments(commentsData)
+                }
+            } catch (error) {
+                console.error('Error fetching comments:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        if (articleId) {
+            fetchComments()
+        }
+    }, [articleId, API_BASE_URL])
+
+    const handleSubmitComment = async (e) => {
+        e.preventDefault()
+
+        if (!newComment.trim() || !currentUser) {
+            return
+        }
+
+        try {
+            setSubmitting(true)
+            const response = await fetch(`${API_BASE_URL}/api/comments/article/${articleId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    content: newComment.trim()
+                })
+            })
+
+            if (response.ok) {
+                const newCommentData = await response.json()
+                setComments(prev => [newCommentData, ...prev])
+                setNewComment('')
+            } else {
+                console.error('Failed to submit comment')
+            }
+        } catch (error) {
+            console.error('Error submitting comment:', error)
+        } finally {
+            setSubmitting(false)
+        }
     }
 
-    const handleReplySubmit = (parentId) => {
-        if (!replyText.trim()) return
+    const handleDeleteComment = async (commentId) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/comments/${commentId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            })
 
-        const newReply = {
-            id: `${Date.now()}`,
-            author: {
-                name: "Current User",
-                avatar: "/placeholder.svg?height=50&width=50&text=CU",
-                initials: "CU",
-            },
-            content: replyText,
-            timestamp: "Just now",
-            likes: 0,
-            replies: [],
+            if (response.ok) {
+                setComments(prev => prev.filter(comment => comment.id !== commentId))
+            } else {
+                console.error('Failed to delete comment')
+            }
+        } catch (error) {
+            console.error('Error deleting comment:', error)
         }
+    }
 
-        const updatedComments = comments.map(comment =>
-            comment.id === parentId
-                ? { ...comment, replies: [...comment.replies, newReply] }
-                : comment
+    const formatDate = (dateString) => {
+        const date = new Date(dateString)
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
+    }
+
+    const canDeleteComment = (comment) => {
+        return currentUser && (
+            currentUser.id === comment.user?.id ||
+            currentUser.role === 'ADMIN'
         )
-
-        setComments(updatedComments)
-        setReplyText("")
-        setActiveReplyId(null)
     }
 
-    const renderComment = (comment, isReply = false) => (
-        <div key={comment.id} className={`${isReply ? "ml-12 mt-4" : "mb-6"}`}>
-            <div className="flex gap-4">
-                <Avatar className="h-10 w-10 flex-shrink-0">
-                    <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
-                    <AvatarFallback>{comment.author.initials}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                            <div>
-                                <p className="font-semibold">{comment.author.name}</p>
-                                <p className="text-xs text-muted-foreground">{comment.timestamp}</p>
+    if (loading) {
+        return (
+            <div className="mt-8">
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5" />
+                    Comments
+                </h3>
+                <div className="animate-pulse space-y-4">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="flex gap-3">
+                            <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+                            <div className="flex-1">
+                                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                                <div className="h-16 bg-gray-200 rounded"></div>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Trash className="h-4 w-4" />
-                            </Button>
                         </div>
-                        <p>{comment.content}</p>
-                    </div>
-                    <div className="flex items-center gap-4 mt-2">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2"
-                            onClick={() =>
-                                setActiveReplyId(activeReplyId === comment.id ? null : comment.id)
-                            }
-                        >
-                            <Reply className="h-4 w-4 mr-1" />
-                            Reply
-                        </Button>
-                    </div>
-
-                    {/* Reply input */}
-                    {activeReplyId === comment.id && (
-                        <AddComment
-                            value={replyText}
-                            onChange={setReplyText}
-                            onCancel={() => {
-                                setActiveReplyId(null)
-                                setReplyText("")
-                            }}
-                            onSubmit={() => handleReplySubmit(comment.id)}
-                        />
-                    )}
-
-                    {/* Render replies */}
-                    {comment.replies.map((reply) => renderComment(reply, true))}
+                    ))}
                 </div>
             </div>
-        </div>
-    )
+        )
+    }
 
     return (
-        <div>
-            <h2 className="text-2xl font-bold mb-6">Comments ({comments.length})</h2>
+        <div className="mt-8">
+            <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <MessageCircle className="h-5 w-5" />
+                Comments ({comments.length})
+            </h3>
 
-            {/* Add a new top-level comment */}
-            <div className="mb-8">
-                <AddComment
-                    value={commentText}
-                    onChange={setCommentText}
-                    onCancel={() => setCommentText("")}
-                    onSubmit={handleCommentSubmit}
-                />
+            {/* Comment Form */}
+            {currentUser ? (
+                <Card className="mb-6">
+                    <CardContent className="pt-6">
+                        <form onSubmit={handleSubmitComment}>
+                            <div className="flex gap-3">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage
+                                        src="/placeholder.svg?height=40&width=40&text=User"
+                                        alt={`${currentUser.firstName} ${currentUser.lastName}`}
+                                    />
+                                    <AvatarFallback>
+                                        {currentUser.firstName?.[0]}{currentUser.lastName?.[0]}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                    <Textarea
+                                        placeholder="Write a comment..."
+                                        value={newComment}
+                                        onChange={(e) => setNewComment(e.target.value)}
+                                        className="mb-3 min-h-[80px]"
+                                    />
+                                    <div className="flex justify-end">
+                                        <Button
+                                            type="submit"
+                                            disabled={!newComment.trim() || submitting}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <Send className="h-4 w-4" />
+                                            {submitting ? 'Posting...' : 'Post Comment'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
+            ) : (
+                <Card className="mb-6">
+                    <CardContent className="pt-6 text-center">
+                        <p className="text-muted-foreground">
+                            Please log in to leave a comment.
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Comments List */}
+            <div className="space-y-6">
+                {comments.length === 0 ? (
+                    <Card>
+                        <CardContent className="pt-6 text-center">
+                            <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                            <p className="text-muted-foreground">
+                                No comments yet. Be the first to share your thoughts!
+                            </p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    comments.map((comment, index) => (
+                        <div key={comment.id}>
+                            <div className="flex gap-3">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage
+                                        src="/placeholder.svg?height=40&width=40&text=User"
+                                        alt={`${comment.user?.firstName || ''} ${comment.user?.lastName || ''}`}
+                                    />
+                                    <AvatarFallback>
+                                        {(comment.user?.firstName?.[0] || '') + (comment.user?.lastName?.[0] || '')}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="font-semibold text-sm">
+                                                {comment.user?.firstName} {comment.user?.lastName}
+                                            </h4>
+                                            <span className="text-xs text-muted-foreground">
+                                                {formatDate(comment.createdAt)}
+                                            </span>
+                                        </div>
+                                        {canDeleteComment(comment) && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleDeleteComment(comment.id)}
+                                                className="text-red-500 hover:text-red-700 h-8 w-8 p-0"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                        {comment.content}
+                                    </p>
+                                </div>
+                            </div>
+                            {index < comments.length - 1 && <Separator className="mt-6" />}
+                        </div>
+                    ))
+                )}
             </div>
-
-            <Separator className="mb-6" />
-
-            <div>{comments.map((comment) => renderComment(comment))}</div>
         </div>
     )
 }
 
-// Reusable AddComment component
-function AddComment({ value, onChange, onCancel, onSubmit }) {
-    return (
-        <div className="flex gap-4">
-            <Avatar className="h-10 w-10 flex-shrink-0">
-                <AvatarImage src="/placeholder.svg?height=50&width=50&text=CU" alt="Current User" />
-                <AvatarFallback>CU</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-                <Textarea
-                    placeholder="Add a comment..."
-                    className="mb-2 resize-none"
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                />
-                <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={onCancel}>
-                        Cancel
-                    </Button>
-                    <Button
-                        className="bg-red-700 hover:bg-red-800"
-                        onClick={onSubmit}
-                        disabled={!value.trim()}
-                    >
-                        Comment
-                    </Button>
-                </div>
-            </div>
-        </div>
-    )
-}
+export default CommentSection
