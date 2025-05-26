@@ -41,8 +41,8 @@ public class UserContoller {
 
         if (userResponse != null && userResponse.getId() != null) {
             ResponseCookie cookie = ResponseCookie.from("userId", userResponse.getId().toString())
-                    .httpOnly(true) // Prevents XSS attacks
-                    .secure(false) // Set to true in production with HTTPS
+                    .httpOnly(true)
+                    .secure(false)
                     .path("/")
                     .maxAge(Duration.ofDays(7))
                     .sameSite("Lax")

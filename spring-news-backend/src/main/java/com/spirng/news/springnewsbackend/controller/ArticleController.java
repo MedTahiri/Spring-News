@@ -53,7 +53,7 @@ public class ArticleController {
                 Theme.valueOf(request.getTheme()),
                 request.getImage(),
                 request.getContent(),
-                tags, // Now passing Set<Tag> instead of List<String>
+                tags,
                 author,
                 0,
                 request.getLink(),

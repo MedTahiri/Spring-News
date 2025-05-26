@@ -2,9 +2,11 @@
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import {Badge} from "@/components/ui/badge"
-import {User, ShieldCheck, PenLine} from "lucide-react"
+import {Button} from "@/components/ui/button"
+import {User, ShieldCheck, PenLine, Settings, FileText} from "lucide-react"
 import {useEffect, useState} from "react";
 import {useRouter} from "next/navigation"
+import Link from "next/link"
 
 export default function ProfilePage() {
     const router = useRouter()
@@ -108,6 +110,27 @@ export default function ProfilePage() {
                         <Badge variant={meta.badgeVariant}>{meta.label}</Badge>
                     </div>
                     <p className="text-muted-foreground">{meta.description}</p>
+
+                    {/* Role-based action buttons */}
+                    <div className="pt-4 space-y-2">
+                        {user?.role === "Journalist" && (
+                            <Button asChild className="w-full">
+                                <Link href="/journalist" className="flex items-center justify-center gap-2">
+                                    <FileText className="w-4 h-4" />
+                                    Go to Journalist Dashboard
+                                </Link>
+                            </Button>
+                        )}
+                        {user?.role === "Admin" && (
+                            <Button asChild className="w-full">
+                                <Link href="/admin" className="flex items-center justify-center gap-2">
+                                    <Settings className="w-4 h-4" />
+                                    Go to Admin Panel
+                                </Link>
+                            </Button>
+                        )}
+                    </div>
+
                     {user?.bio && (
                         <div>
                             <h3 className="font-semibold text-sm mt-4 mb-1">Bio</h3>
