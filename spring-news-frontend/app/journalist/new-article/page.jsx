@@ -139,7 +139,7 @@ export default function NewArticlePage() {
                 //     image: "",
                 //     content: "",
                 //     tags: "",
-                //     authorId: formData.authorId, // Keep the authorId
+                //     authorId: formData.authorId,
                 //     link: ""
                 // })
 

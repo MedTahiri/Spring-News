@@ -16,7 +16,6 @@ export default function ArticlePage({params}) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Spring Boot API
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
     useEffect(() => {

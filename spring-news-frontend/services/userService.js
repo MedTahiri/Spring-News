@@ -9,7 +9,7 @@ export const Login = async (email, password) => {
         headers: {
             'Content-Type': 'application/json',
         },
-        credentials: 'include', // Important for cookies
+        credentials: 'include', // Important for cookies.
         body: JSON.stringify({ email, password })
     })
 

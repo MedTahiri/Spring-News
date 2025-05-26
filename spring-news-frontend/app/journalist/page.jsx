@@ -10,7 +10,6 @@ import {use, useEffect, useState} from "react";
 import Cookie from "js-cookie";
 import { useRouter } from "next/navigation";
 
-// Function to get current user from backend (uses httpOnly cookie)
 const getCurrentUser = async () => {
     try {
         const response = await fetch('http://localhost:8080/api/user/me', {
@@ -36,14 +35,12 @@ const getCurrentUser = async () => {
     }
 };
 
-// Function to fetch articles by author ID from your Spring Boot API
 const fetchArticlesByAuthor = async (authorId) => {
     try {
         const response = await fetch(`http://localhost:8080/api/articles/author/${authorId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                // Add any authentication headers if needed
             },
             credentials: 'include', // Include cookies in the request
         });
@@ -111,13 +108,13 @@ export default function JournalistDashboard() {
     if (loading) return <div className="container mx-auto px-4 py-8"><p>Loading...</p></div>
     if (error) return <div className="container mx-auto px-4 py-8"><p className="text-red-500">Error: {error}</p></div>
 
-    // Map Spring Boot response to match your frontend expectations
+
     const mappedArticles = articles.map(article => ({
         id: article.id,
         title: article.title,
-        status: article.status?.toLowerCase(), // Convert PUBLISHED/PENDING/REFUSED to lowercase
-        category: article.theme, // Using theme as category
-        date: article.createdAt || new Date().toLocaleDateString(), // Use createdAt or fallback
+        status: article.status?.toLowerCase(),
+        category: article.theme,
+        date: article.createdAt || new Date().toLocaleDateString(),
         views: article.views || 0,
         comments: article.comments?.length || 0,
         resume: article.resume,

@@ -7,7 +7,6 @@ const formatDate = (dateString) => {
         // Check if date is valid
         if (isNaN(date.getTime())) return 'Recently published';
 
-        // Format as desired (e.g., "Dec 15, 2023")
         return date.toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
@@ -29,7 +28,6 @@ export const News = async () => {
         }
         const data = await response.json();
 
-        // Transform the data to match your frontend structure
         return data.map(article => ({
             id: article.id,
             title: article.title,
@@ -77,7 +75,6 @@ export const TopNews = async () => {
     }
 };
 
-// Additional service functions you can use
 export const getArticleById = async (id) => {
     try {
         const response = await fetch(`${API_BASE_URL}/articles/${id}`);
