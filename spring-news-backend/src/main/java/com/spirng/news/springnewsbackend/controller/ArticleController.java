@@ -10,6 +10,10 @@ import com.spirng.news.springnewsbackend.model.User;
 import com.spirng.news.springnewsbackend.service.ArticleService;
 import com.spirng.news.springnewsbackend.service.TagService;
 import com.spirng.news.springnewsbackend.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +38,15 @@ public class ArticleController {
     private TagService tagService;
 
     @PostMapping("/new")
+    @Operation(
+            summary = "Create a new article",
+            description = "Creates a new article with the given details including title, resume, theme, content, tags, author, and other metadata"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Article successfully created"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Author not found", content = @Content)
+    })
     public ResponseEntity<ArticleResponse> createArticle(@RequestBody ArticleRequest request) {
         User author = userService.findUserEntityById(request.getAuthorId());
 
@@ -67,6 +80,10 @@ public class ArticleController {
     }
 
     @GetMapping("/all")
+    @Operation(
+            summary = "Get all articles",
+            description = "Retrieves a list of all articles"
+    )
     public ResponseEntity<List<ArticleResponse>> getAllArticles() {
         List<Article> articles = articleService.getAllArticles();
         List<ArticleResponse> responses = new ArrayList<>();
@@ -79,6 +96,10 @@ public class ArticleController {
     }
 
     @GetMapping("/pending")
+    @Operation(
+            summary = "Get all pending articles",
+            description = "Retrieves a list of articles with status PENDING"
+    )
     public ResponseEntity<List<ArticleResponse>> getPendingArticles() {
         List<Article> pendingArticles = articleService.getArticlesByStatus(ArticleStatus.PENDING);
         List<ArticleResponse> responses = new ArrayList<>();
@@ -89,6 +110,10 @@ public class ArticleController {
     }
 
     @GetMapping("/published")
+    @Operation(
+            summary = "Get all published articles",
+            description = "Retrieves a list of articles with status PUBLISHED"
+    )
     public ResponseEntity<List<ArticleResponse>> getPublishedArticles() {
         List<Article> publishedArticles = articleService.getArticlesByStatus(ArticleStatus.PUBLISHED);
         List<ArticleResponse> responses = new ArrayList<>();
@@ -99,6 +124,10 @@ public class ArticleController {
     }
 
     @PostMapping("/{id}/publish")
+    @Operation(
+            summary = "Publish an article",
+            description = "Updates the status of the article with the specified ID to PUBLISHED"
+    )
     public ResponseEntity<ArticleResponse> publishArticle(@PathVariable Long id) {
         Article updatedArticle = articleService.updateArticleStatus(id, ArticleStatus.PUBLISHED);
         ArticleResponse response = new ArticleResponse(updatedArticle);
@@ -106,6 +135,10 @@ public class ArticleController {
     }
 
     @PostMapping("/{id}/refuse")
+    @Operation(
+            summary = "Refuse an article",
+            description = "Updates the status of the article with the specified ID to REFUSED"
+    )
     public ResponseEntity<ArticleResponse> refuseArticle(@PathVariable Long id) {
         Article updatedArticle = articleService.updateArticleStatus(id, ArticleStatus.REFUSED);
         ArticleResponse response = new ArticleResponse(updatedArticle);
@@ -113,6 +146,10 @@ public class ArticleController {
     }
 
     @GetMapping("/author/{authorId}")
+    @Operation(
+            summary = "Get articles by author",
+            description = "Retrieves a list of articles written by the specified author"
+    )
     public ResponseEntity<List<ArticleResponse>> getArticlesByAuthor(@PathVariable Long authorId) {
         List<Article> articles = articleService.getArticlesByAuthorId(authorId);
         List<ArticleResponse> responses = new ArrayList<>();
@@ -123,6 +160,10 @@ public class ArticleController {
     }
 
     @GetMapping("/{id}")
+    @Operation(
+            summary = "Get article by ID",
+            description = "Retrieves the details of an article by its unique ID"
+    )
     public ResponseEntity<ArticleResponse> getArticleById(@PathVariable Long id) {
         Article article = articleService.getArticleById(id);
         ArticleResponse response = new ArticleResponse(article);
