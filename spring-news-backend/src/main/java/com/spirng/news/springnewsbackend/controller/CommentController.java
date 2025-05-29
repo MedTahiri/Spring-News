@@ -8,6 +8,7 @@ import com.spirng.news.springnewsbackend.model.User;
 import com.spirng.news.springnewsbackend.service.ArticleService;
 import com.spirng.news.springnewsbackend.service.CommentService;
 import com.spirng.news.springnewsbackend.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,10 @@ public class CommentController {
     private UserService userService;
 
     @PostMapping("/article/{articleId}")
+    @Operation(
+            summary = "Add a comment to an article",
+            description = "Adds a new comment to the specified article. User ID is obtained from cookie."
+    )
     public ResponseEntity<CommentResponse> addComment(
             @PathVariable Long articleId,
             @RequestBody CommentRequest request,
@@ -59,6 +64,10 @@ public class CommentController {
     }
 
     @GetMapping("/article/{articleId}")
+    @Operation(
+            summary = "Get comments for an article",
+            description = "Retrieves a list of comments associated with the specified article."
+    )
     public ResponseEntity<List<CommentResponse>> getCommentsByArticle(@PathVariable Long articleId) {
         try {
             List<Comment> comments = commentService.getCommentsByArticleId(articleId);
@@ -73,6 +82,10 @@ public class CommentController {
     }
 
     @DeleteMapping("/{commentId}")
+    @Operation(
+            summary = "Delete a comment",
+            description = "Deletes a comment by its ID. User must be the comment owner. User ID is obtained from cookie."
+    )
     public ResponseEntity<?> deleteComment(
             @PathVariable Long commentId,
             HttpServletRequest httpRequest) {
