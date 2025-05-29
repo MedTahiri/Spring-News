@@ -53,7 +53,7 @@ export default function RegisterPage() {
             if (password === confirmPassword) {
                 const user = await Register(firstname, lastname, email, password, role, bio)
                 console.log(user)
-                router.push("/")
+                router.push("/login")
             } else {
                 setError("Passwords don't match")
             }

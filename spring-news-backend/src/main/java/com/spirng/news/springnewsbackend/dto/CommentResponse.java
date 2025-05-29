@@ -4,6 +4,7 @@ import com.spirng.news.springnewsbackend.model.Comment;
 
 import java.time.LocalDateTime;
 
+
 public class CommentResponse {
     private Long id;
     private String content;

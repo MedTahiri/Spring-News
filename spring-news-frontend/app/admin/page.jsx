@@ -1,15 +1,17 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {Button} from "@/components/ui/button"
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card"
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
+import {Badge} from "@/components/ui/badge"
+import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar"
 import {CheckCircle, Trash, Brain, Eye, Flag, Lock, Plus, Shield, User, XCircle} from "lucide-react"
 import Link from "next/link"
-import { Separator } from "@/components/ui/separator"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import {Separator} from "@/components/ui/separator"
+import {useState, useEffect} from "react"
+import {useRouter} from "next/navigation"
+import {News, TopNews} from "@/services/newsService";
+import {Skeleton} from "@mui/material";
 
 export default function AdminDashboard() {
     const router = useRouter()
@@ -22,6 +24,9 @@ export default function AdminDashboard() {
     const [authChecking, setAuthChecking] = useState(true)
     const [isAdmin, setIsAdmin] = useState(false)
     const [currentUser, setCurrentUser] = useState(null)
+    const [nbArticleP, setNbArticleP] = useState(0)
+
+    const [logs, setLogs] = useState()
 
     // Check if user is admin on component mount
     useEffect(() => {
@@ -65,6 +70,7 @@ export default function AdminDashboard() {
                 setAuthChecking(false)
             }
         }
+
 
         checkAdminStatus()
     }, [router])
@@ -170,6 +176,41 @@ export default function AdminDashboard() {
         }
     }
 
+
+    const getNumberOfPublishedArticles = async () => {
+        try {
+            const response = await fetch(`http://localhost:8080/api/articles/published`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include', // If using cookies for auth
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return Array.isArray(data) ? data.length : 0;
+            } else {
+                console.error(`HTTP error! status: ${response.status}`);
+                return 0;
+            }
+        } catch (err) {
+            console.error('Failed to fetch published articles:', err);
+            return 0;
+        }
+    };
+
+// Example usage
+    useEffect(() => {
+        const fetchCount = async () => {
+            const count = await getNumberOfPublishedArticles();
+            setNbArticleP(count)
+        };
+
+        fetchCount();
+    }, []);
+
+
     // Format date
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A'
@@ -196,14 +237,37 @@ export default function AdminDashboard() {
     // Get theme display name and badge variant
     const getThemeInfo = (theme) => {
         const themeMap = {
-            'TECHNOLOGY': { name: 'Technology', variant: 'default' },
-            'HEALTH': { name: 'Health', variant: 'secondary' },
-            'ENVIRONMENT': { name: 'Environment', variant: 'outline' },
-            'POLITICS': { name: 'Politics', variant: 'destructive' },
-            'BUSINESS': { name: 'Business', variant: 'secondary' },
-            'SPORTS': { name: 'Sports', variant: 'outline' }
+            'TECHNOLOGY': {name: 'Technology', variant: 'default'},
+            'HEALTH': {name: 'Health', variant: 'secondary'},
+            'ENVIRONMENT': {name: 'Environment', variant: 'outline'},
+            'POLITICS': {name: 'Politics', variant: 'destructive'},
+            'BUSINESS': {name: 'Business', variant: 'secondary'},
+            'SPORTS': {name: 'Sports', variant: 'outline'}
         }
-        return themeMap[theme] || { name: theme, variant: 'outline' }
+        return themeMap[theme] || {name: theme, variant: 'outline'}
+    }
+
+    const fetchLog = () => {
+        fetch("http://localhost:8080/api/log/logs")
+            .then((res) => res.json())
+            .then((data) => {
+                setLogs(data)
+            })
+    }
+
+    useEffect(() => {
+        fetchLog()
+    }, [])
+
+    const deleteAllLog = () => {
+        fetch("http://localhost:8080/api/log/clean", {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include', // If using cookies for auth
+        })
+            .then(() => fetchLog());
     }
 
     // Show loading while checking authentication
@@ -212,13 +276,15 @@ export default function AdminDashboard() {
             <div className="container mx-auto px-4 py-8">
                 <div className="flex items-center justify-center min-h-[400px]">
                     <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                        <div
+                            className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
                         <p className="text-muted-foreground">Checking permissions...</p>
                     </div>
                 </div>
             </div>
         )
     }
+
 
     // This component will only render if the user is an admin
     // Non-admin users will be redirected before reaching this point
@@ -248,7 +314,7 @@ export default function AdminDashboard() {
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Published Articles</CardTitle>
-                        <CardDescription className="text-2xl font-bold">487</CardDescription>
+                        <CardDescription className="text-2xl font-bold">{nbArticleP}</CardDescription>
                     </CardHeader>
                 </Card>
                 <Card>
@@ -257,18 +323,13 @@ export default function AdminDashboard() {
                         <CardDescription className="text-2xl font-bold">{pendingArticles.length}</CardDescription>
                     </CardHeader>
                 </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Rejected Articles</CardTitle>
-                        <CardDescription className="text-2xl font-bold">8</CardDescription>
-                    </CardHeader>
-                </Card>
             </div>
 
             <Tabs defaultValue="users" className="mb-8">
                 <TabsList>
                     <TabsTrigger value="users">User Management</TabsTrigger>
                     <TabsTrigger value="content">Content Moderation</TabsTrigger>
+                    <TabsTrigger value="log">System Logs</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="users" className="mt-6">
@@ -295,7 +356,8 @@ export default function AdminDashboard() {
                             {!loading && !error && (
                                 <div className="space-y-4">
                                     {users.map((user) => (
-                                        <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                                        <div key={user.id}
+                                             className="flex items-center justify-between p-4 border rounded-lg">
                                             <div className="flex items-center gap-4">
                                                 <Avatar>
                                                     <AvatarFallback>
@@ -315,7 +377,8 @@ export default function AdminDashboard() {
                                                         </Badge>
                                                     </div>
                                                     <p className="text-sm text-muted-foreground">{user.email}</p>
-                                                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                                                    <div
+                                                        className="flex items-center text-xs text-muted-foreground mt-1">
                                                         <span>Joined: {formatDate(user.createdAt)}</span>
                                                     </div>
                                                     {user.bio && (
@@ -331,7 +394,7 @@ export default function AdminDashboard() {
                                                     size="sm"
                                                     onClick={() => handleDeleteUser(user.id)}
                                                 >
-                                                    <Trash className="h-4 w-4 mr-1" />
+                                                    <Trash className="h-4 w-4 mr-1"/>
                                                     Delete
                                                 </Button>
                                             </div>
@@ -382,7 +445,8 @@ export default function AdminDashboard() {
                                                             {article.tags && article.tags.length > 0 && (
                                                                 <div className="flex gap-1">
                                                                     {article.tags.slice(0, 2).map((tag) => (
-                                                                        <Badge key={tag.id} variant="secondary" className="text-xs">
+                                                                        <Badge key={tag.id} variant="secondary"
+                                                                               className="text-xs">
                                                                             {tag.name}
                                                                         </Badge>
                                                                     ))}
@@ -407,7 +471,8 @@ export default function AdminDashboard() {
                                                             {article.resume}
                                                         </p>
                                                     )}
-                                                    <div className="flex items-center text-xs text-muted-foreground mb-3">
+                                                    <div
+                                                        className="flex items-center text-xs text-muted-foreground mb-3">
                                                         <span>Views: {article.views}</span>
                                                         <span className="mx-2">•</span>
                                                         <span>Status: {article.status}</span>
@@ -421,20 +486,16 @@ export default function AdminDashboard() {
                                                     <div className="flex items-center gap-2">
                                                         <Button variant="outline" size="sm" asChild>
                                                             <Link href={`/article/${article.id}`}>
-                                                                <Eye className="h-4 w-4 mr-1" />
+                                                                <Eye className="h-4 w-4 mr-1"/>
                                                                 Preview
                                                             </Link>
-                                                        </Button>
-                                                        <Button variant="outline" size="sm">
-                                                            <Brain className="h-4 w-4 mr-1" />
-                                                            Analyse with AI
                                                         </Button>
                                                         <Button
                                                             size="sm"
                                                             className="bg-green-600 hover:bg-green-700"
                                                             onClick={() => handleApproveArticle(article.id)}
                                                         >
-                                                            <CheckCircle className="h-4 w-4 mr-1" />
+                                                            <CheckCircle className="h-4 w-4 mr-1"/>
                                                             Approve
                                                         </Button>
                                                         <Button
@@ -442,7 +503,7 @@ export default function AdminDashboard() {
                                                             size="sm"
                                                             onClick={() => handleRejectArticle(article.id)}
                                                         >
-                                                            <XCircle className="h-4 w-4 mr-1" />
+                                                            <XCircle className="h-4 w-4 mr-1"/>
                                                             Reject
                                                         </Button>
                                                     </div>
@@ -456,6 +517,44 @@ export default function AdminDashboard() {
                                             </div>
                                         )}
                                     </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="log" className="mt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+                        <Card>
+                            <CardHeader>
+
+                                <CardTitle>Log</CardTitle>
+                                <CardDescription>System Logs</CardDescription>
+
+                                <Button onClick={
+                                    deleteAllLog
+                                }>
+                                    Clean All Log
+                                </Button>
+                            </CardHeader>
+                            <CardContent className="space-y-4 max-h-[400px] overflow-auto">
+                                {loading ? (
+                                    <>
+                                        <Skeleton className="h-4 w-full"/>
+                                        <Skeleton className="h-4 w-5/6"/>
+                                    </>
+                                ) : logs.length > 0 ? (
+                                    logs.map((log) => (
+                                        <div
+                                            key={log.id}
+                                            className="p-2 border rounded-lg text-sm bg-muted text-muted-foreground"
+                                        >
+                                            <div className="font-medium">{new Date(log.date).toLocaleString()}</div>
+                                            <div>{log.message}</div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">No logs found.</p>
                                 )}
                             </CardContent>
                         </Card>

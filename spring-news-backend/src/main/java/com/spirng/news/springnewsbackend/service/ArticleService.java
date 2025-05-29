@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.lang.Long;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -45,8 +46,11 @@ public class ArticleService {
     }
 
     public Article getArticleById(Long id) {
-        return articleRepository.findById(id)
+        Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Article not found with id: " + id));
+
+        article.setViews(article.getViews() + 1);
+        return articleRepository.save(article);
     }
 
     @Transactional
@@ -58,4 +62,7 @@ public class ArticleService {
         }
     }
 
+    public void deleteArticle(Long id) {
+        articleRepository.deleteById(id);
+    }
 }

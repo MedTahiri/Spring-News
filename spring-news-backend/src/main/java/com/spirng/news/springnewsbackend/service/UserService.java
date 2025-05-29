@@ -91,4 +91,8 @@ public class UserService {
         return user.getRole() == Role.Admin;
     }
 
+    public User findUserByEmail(String email) {
+        return userRepository.getUserByEmail(email);
+    }
+
 }

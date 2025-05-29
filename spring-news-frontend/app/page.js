@@ -16,7 +16,7 @@ export default function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const categories = ["all", "politics", "business", "technology", "health", "opinion"];
+    const categories = ["all", "politics", "technology", "health", "sports", "culture", "education", "environment", "economy", "entertainment", "international", "law", "lifestyle", "science", "society"];
 
     useEffect(() => {
         const fetchData = async () => {
@@ -79,7 +79,7 @@ export default function Home() {
 
     return (
         <div className="container mx-auto px-4 py-6">
-            {/* Featured Article */}
+            {console.log(news[0])}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
                 <div className="lg:col-span-2">
                     <Card className="border-0 shadow-none">
@@ -112,12 +112,8 @@ export default function Home() {
                                 <span className="flex items-center">
                                     <Eye className="h-4 w-4 mr-1"/> {news[0]?.views}
                                 </span>
-                                <span className="mx-2">|</span>
-                                <span className="flex items-center">
-                                    <MessageSquare className="h-4 w-4 mr-1"/> {news[0]?.comment}
-                                </span>
                             </div>
-                            <p className="text-lg leading-relaxed">
+                            <p className="text-lg leading-relaxed line-clamp-3">
                                 {news[0]?.content}
                             </p>
                             <Button variant="link" className="p-0 h-auto mt-2 font-bold">

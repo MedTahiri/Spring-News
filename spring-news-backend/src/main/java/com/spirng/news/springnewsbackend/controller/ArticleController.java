@@ -22,7 +22,6 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/api/articles")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class ArticleController {
 
     @Autowired
@@ -128,5 +127,11 @@ public class ArticleController {
         Article article = articleService.getArticleById(id);
         ArticleResponse response = new ArticleResponse(article);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deleteArticle(@PathVariable Long id) {
+        articleService.deleteArticle(id);
+        return ResponseEntity.ok().build();
     }
 }

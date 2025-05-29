@@ -15,13 +15,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {Sheet, SheetContent, SheetTrigger} from "@/components/ui/sheet"
 import {Avatar, AvatarFallback} from "@/components/ui/avatar"
-import {Menu, Search, User, X} from "lucide-react"
+import {Menu, User, X} from "lucide-react"
 import {useRouter} from "next/navigation";
 
 export default function Header() {
-    const [showSearch, setShowSearch] = useState(false)
     const [isLoggedIn, setIsLoggedIn] = useState(false)
-    const [user, setUser] = useState(null)
+    const [user, setUser] = useState({})
     const [isLoading, setIsLoading] = useState(true)
 
     const router = useRouter()
@@ -94,10 +93,6 @@ export default function Header() {
         }
     }, [])
 
-    const toggleSearch = () => {
-        setShowSearch(!showSearch)
-    }
-
     const logout = async () => {
         try {
             console.log('Logging out...')
@@ -113,7 +108,6 @@ export default function Header() {
         setUser(null)
         router.push("/")
     }
-
     // Show loading state initially
     if (isLoading) {
         return (
@@ -177,11 +171,6 @@ export default function Header() {
                     </Link>
 
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={toggleSearch} className="relative">
-                            {showSearch ? <X className="h-5 w-5"/> : <Search className="h-5 w-5"/>}
-                            <span className="sr-only">{showSearch ? "Close search" : "Search"}</span>
-                        </Button>
-
                         {isLoggedIn ? (
                             <>
                                 <DropdownMenu>
@@ -189,8 +178,8 @@ export default function Header() {
                                         <Button variant="ghost" size="icon" className="rounded-full">
                                             <Avatar className="h-8 w-8">
                                                 <AvatarFallback>
-                                                    {user && user.firstname && user.lastname
-                                                        ? user.firstname[0].toUpperCase() + user.lastname[0].toUpperCase()
+                                                    {user && user.firstName && user.lastName
+                                                        ? user?.firstName[0].toUpperCase() + user?.lastName[0].toUpperCase()
                                                         : 'U'
                                                     }
                                                 </AvatarFallback>
@@ -199,7 +188,7 @@ export default function Header() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>
-                                            {user && user.firstname ? `${user.firstname} ${user.lastname || ''}` : 'User'}
+                                            {user && user.firstName ? `${user.firstName} ${user.lastName || ''}` : 'User'}
                                         </DropdownMenuLabel>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem>
@@ -207,14 +196,14 @@ export default function Header() {
                                                 Profile
                                             </Link>
                                         </DropdownMenuItem>
-                                        {user?.role === "journalist" &&
+                                        {user?.role === "Journalist" &&
                                             <DropdownMenuItem>
                                                 <Link href="/journalist" className="flex w-full">
                                                     Journalist Dashboard
                                                 </Link>
                                             </DropdownMenuItem>
                                         }
-                                        {user?.role === "admin" &&
+                                        {user?.role === "Admin" &&
                                             <DropdownMenuItem>
                                                 <Link href="/admin" className="flex w-full">
                                                     Admin Panel
@@ -244,17 +233,6 @@ export default function Header() {
                         )}
                     </div>
                 </div>
-
-                {/* Search Bar */}
-                {showSearch && (
-                    <div className="py-3 border-t">
-                        <div className="relative">
-                            <Search
-                                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
-                            <Input placeholder="Search for articles, topics, and more..." className="pl-10" autoFocus/>
-                        </div>
-                    </div>
-                )}
             </div>
         </header>
     )

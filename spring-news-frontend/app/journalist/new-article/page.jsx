@@ -158,15 +158,19 @@ export default function NewArticlePage() {
 
     const themes = [
         "POLITICS",
-        "BUSINESS",
         "TECHNOLOGY",
         "HEALTH",
         "SPORTS",
-        "ENTERTAINMENT",
-        "WORLD",
-        "SCIENCE",
-        "OPINION",
+        "CULTURE",
         "EDUCATION",
+        "ENVIRONMENT",
+        "ECONOMY",
+        "ENTERTAINMENT",
+        "INTERNATIONAL",
+        "LAW",
+        "LIFESTYLE",
+        "SCIENCE",
+        "SOCIETY"
     ]
 
     // Show loading or error state if user is not authenticated

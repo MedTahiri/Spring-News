@@ -8,7 +8,7 @@ import {CalendarIcon, Edit, Eye, Plus, Trash} from "lucide-react"
 import Link from "next/link"
 import {use, useEffect, useState} from "react";
 import Cookie from "js-cookie";
-import { useRouter } from "next/navigation";
+import {useRouter} from "next/navigation";
 
 const getCurrentUser = async () => {
     try {
@@ -62,45 +62,45 @@ export default function JournalistDashboard() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const router = useRouter();
+    const fetchData = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            // First, check if user is authenticated by calling /api/user/me
+            const currentUser = await getCurrentUser();
+
+            if (!currentUser || !currentUser.id) {
+                console.log("No valid user authentication found, redirecting to login");
+                router.push("/login");
+                return;
+            }
+
+            console.log("Authenticated user:", currentUser);
+            const userId = currentUser.id;
+
+            // Now fetch articles for this authenticated user
+            const fetchedArticles = await fetchArticlesByAuthor(userId);
+            setArticles(Array.isArray(fetchedArticles) ? fetchedArticles : []);
+
+        } catch (error) {
+            console.error("Authentication or data fetch error:", error);
+
+            // If it's an authentication error, redirect to login
+            if (error.message === 'Unauthorized') {
+                console.log("User not authenticated, redirecting to login");
+                router.push("/login");
+                return;
+            }
+
+            // For other errors, show error message
+            setError("Failed to load articles. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-
-            try {
-                // First, check if user is authenticated by calling /api/user/me
-                const currentUser = await getCurrentUser();
-
-                if (!currentUser || !currentUser.id) {
-                    console.log("No valid user authentication found, redirecting to login");
-                    router.push("/login");
-                    return;
-                }
-
-                console.log("Authenticated user:", currentUser);
-                const userId = currentUser.id;
-
-                // Now fetch articles for this authenticated user
-                const fetchedArticles = await fetchArticlesByAuthor(userId);
-                setArticles(Array.isArray(fetchedArticles) ? fetchedArticles : []);
-
-            } catch (error) {
-                console.error("Authentication or data fetch error:", error);
-
-                // If it's an authentication error, redirect to login
-                if (error.message === 'Unauthorized') {
-                    console.log("User not authenticated, redirecting to login");
-                    router.push("/login");
-                    return;
-                }
-
-                // For other errors, show error message
-                setError("Failed to load articles. Please try again.");
-            } finally {
-                setLoading(false);
-            }
-        };
 
         fetchData();
     }, [router]);
@@ -122,6 +122,27 @@ export default function JournalistDashboard() {
         image: article.image,
         tags: article.tags || []
     }));
+
+    const deleteArticle = async (id) => {
+        try {
+            const response = await fetch(`http://localhost:8080/api/articles/delete/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include', // Include cookies in the request
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            fetchData();
+        } catch (error) {
+            console.error('Error fetching articles:', error);
+            throw error;
+        }
+    }
 
     // Compute stats based on mapped data
     const publishedCount = mappedArticles.filter(a => a.status === "published").length;
@@ -187,7 +208,7 @@ export default function JournalistDashboard() {
                             <CardDescription>Manage and edit all your articles</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ArticleList articles={mappedArticles} />
+                            <ArticleList articles={mappedArticles} onDelete={deleteArticle}/>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -199,7 +220,7 @@ export default function JournalistDashboard() {
                             <CardDescription>Your published articles</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ArticleList articles={mappedArticles.filter(a => a.status === "published")} />
+                            <ArticleList articles={mappedArticles.filter(a => a.status === "published")} onDelete={deleteArticle}/>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -211,7 +232,7 @@ export default function JournalistDashboard() {
                             <CardDescription>Articles awaiting review</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ArticleList articles={mappedArticles.filter(a => a.status === "pending")} />
+                            <ArticleList articles={mappedArticles.filter(a => a.status === "pending")} onDelete={deleteArticle}/>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -223,7 +244,7 @@ export default function JournalistDashboard() {
                             <CardDescription>Articles that were rejected</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ArticleList articles={mappedArticles.filter(a => a.status === "refused")} />
+                            <ArticleList articles={mappedArticles.filter(a => a.status === "refused")} onDelete={deleteArticle}/>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -233,7 +254,7 @@ export default function JournalistDashboard() {
 }
 
 // Separate component for article list to avoid repetition
-function ArticleList({ articles }) {
+function ArticleList({articles,onDelete}) {
     if (articles.length === 0) {
         return <p className="text-muted-foreground">No articles found.</p>;
     }
@@ -288,11 +309,13 @@ function ArticleList({ articles }) {
                                 </Link>
                             </Button>
                         )}
-                        <Button variant="outline" size="icon">
-                            <Edit className="h-4 w-4"/>
-                            <span className="sr-only">Edit</span>
-                        </Button>
-                        <Button variant="outline" size="icon">
+                        {/*<Button variant="outline" size="icon">*/}
+                        {/*    <Edit className="h-4 w-4"/>*/}
+                        {/*    <span className="sr-only">Edit</span>*/}
+                        {/*</Button>*/}
+                        <Button variant="outline" size="icon" onClick={() => {
+                            onDelete(article.id)
+                        }}>
                             <Trash className="h-4 w-4"/>
                             <span className="sr-only">Delete</span>
                         </Button>

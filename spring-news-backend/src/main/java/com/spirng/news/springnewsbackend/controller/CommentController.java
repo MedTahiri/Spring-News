@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/comments")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class CommentController {
 
     @Autowired
@@ -59,7 +58,7 @@ public class CommentController {
     }
 
     @GetMapping("/article/{articleId}")
-    public ResponseEntity<List<CommentResponse>> getCommentsByArticle(@PathVariable Long articleId) {
+    public ResponseEntity<List<CommentResponse>> getCommentsByArticle(@PathVariable long articleId) {
         try {
             List<Comment> comments = commentService.getCommentsByArticleId(articleId);
             List<CommentResponse> responses = comments.stream()
