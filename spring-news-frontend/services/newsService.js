@@ -60,7 +60,7 @@ export const TopNews = async () => {
         // top 5 articles sorted by views (or by date)
         const topArticles = data
             .sort((a, b) => (b.views || 0) - (a.views || 0))
-            .slice(0, 5);
+            .slice(0, 3);
 
         return topArticles.map(article => ({
             id: article.id,
