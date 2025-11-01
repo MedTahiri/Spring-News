@@ -16,8 +16,6 @@ export default function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    console.log(process.env.NEXT_PUBLIC_BACKEND_URL)
-
     const categories = ["all", "politics", "technology", "health", "sports", "culture", "education", "environment", "economy", "entertainment", "international", "law", "lifestyle", "science", "society"];
 
     useEffect(() => {
