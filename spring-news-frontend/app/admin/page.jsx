@@ -33,7 +33,7 @@ export default function AdminDashboard() {
         const checkAdminStatus = async () => {
             try {
                 // get current user
-                const userResponse = await fetch('http://localhost:8080/api/user/me', {
+                const userResponse = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+'/api/user/me', {
                     credentials: 'include' // Include cookies
                 })
 
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
         if (!authChecking && isAdmin) {
             const fetchUsers = async () => {
                 try {
-                    const response = await fetch('http://localhost:8080/api/user/non-admins', {
+                    const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+'/api/user/non-admins', {
                         credentials: 'include'
                     })
                     if (!response.ok) {
@@ -104,7 +104,7 @@ export default function AdminDashboard() {
         if (!authChecking && isAdmin) {
             const fetchPendingArticles = async () => {
                 try {
-                    const response = await fetch('http://localhost:8080/api/articles/pending')
+                    const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+'/api/articles/pending')
                     if (!response.ok) {
                         throw new Error('Failed to fetch pending articles')
                     }

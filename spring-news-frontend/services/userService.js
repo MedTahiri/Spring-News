@@ -1,6 +1,6 @@
 // services/userService.js
 
-const API_BASE_URL = 'http://localhost:8080/api/user'
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL+'/api/user'
 
 // Login function
 export const Login = async (email, password) => {

@@ -31,7 +31,7 @@ export default function NewArticlePage() {
     useEffect(() => {
         const fetchCurrentUser = async () => {
             try {
-                const response = await fetch('http://localhost:8080/api/user/me', {
+                const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+'/api/user/me', {
                     method: 'GET',
                     credentials: 'include', // Include cookies in the request
                     headers: {
@@ -116,7 +116,7 @@ export default function NewArticlePage() {
 
             console.log('Submitting payload:', JSON.stringify(payload, null, 2))
 
-            const response = await fetch('http://localhost:8080/api/articles/new', {
+            const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+'/api/articles/new', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

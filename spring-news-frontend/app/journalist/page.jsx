@@ -12,7 +12,7 @@ import {useRouter} from "next/navigation";
 
 const getCurrentUser = async () => {
     try {
-        const response = await fetch('http://localhost:8080/api/user/me', {
+        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+'/api/user/me', {
             method: 'GET',
             credentials: 'include', // Important: includes httpOnly cookies
             headers: {

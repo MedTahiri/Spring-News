@@ -34,7 +34,7 @@ export default function Header() {
     // Check authentication status using the /me endpoint
     const checkAuthStatus = async () => {
         try {
-            const response = await fetch('http://localhost:8080/api/user/me', {
+            const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+'/api/user/me', {
                 method: 'GET',
                 credentials: 'include'
             })
@@ -96,7 +96,7 @@ export default function Header() {
     const logout = async () => {
         try {
             console.log('Logging out...')
-            await fetch('http://localhost:8080/api/user/logout', {
+            await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+'/api/user/logout', {
                 method: 'POST',
                 credentials: 'include'
             })

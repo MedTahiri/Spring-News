@@ -15,7 +15,7 @@ const CommentSection = ({ articleId }) => {
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL+''
 
     // current user
     useEffect(() => {

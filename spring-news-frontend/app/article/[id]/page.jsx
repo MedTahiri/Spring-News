@@ -16,7 +16,7 @@ export default function ArticlePage({params}) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL+'';
 
     useEffect(() => {
         const fetchArticle = async () => {
