@@ -1,6 +1,6 @@
 package com.spirng.news.springnewsbackend.config;
 
-import io.github.cdimascio.dotenv.Dotenv;
+//import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 //import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
@@ -18,8 +18,7 @@ public class WebConfig {
             public void addCorsMappings(CorsRegistry registry) {
 //                Dotenv dotenv = Dotenv.configure().load();
                 registry.addMapping("/**") // Apply to all endpoints
-//                        .allowedOrigins(dotenv.get("ORIGIN_URL")) // React/Next.js dev origin
-                        .allowedOrigins("*")
+                        .allowedOrigins(System.getenv("ORIGIN_URL")) // React/Next.js dev origin
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
