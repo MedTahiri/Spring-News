@@ -87,7 +87,7 @@ export const GetAllUsers = async () => {
 }
 
 export async function getUserById(id) {
-    const response = await fetch(`http://localhost:8080/api/user/find/${id}`, {
+    const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+`/api/user/find/${id}`, {
         credentials: 'include'
     });
     if (!response.ok) {

@@ -46,7 +46,7 @@ export default function AdminDashboard() {
                 setCurrentUser(userData)
 
                 // Check if user is admin
-                const adminResponse = await fetch(`http://localhost:8080/api/user/is-admin/${userData.id}`, {
+                const adminResponse = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+`/api/user/is-admin/${userData.id}`, {
                     credentials: 'include'
                 })
 
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
     const handleDeleteUser = async (userId) => {
         if (window.confirm('Are you sure you want to delete this user?')) {
             try {
-                const response = await fetch(`http://localhost:8080/api/user/delete/${userId}`, {
+                const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+`/api/user/delete/${userId}`, {
                     method: 'DELETE',
                     credentials: 'include'
                 })
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
 
     const handleApproveArticle = async (articleId) => {
         try {
-            const response = await fetch(`http://localhost:8080/api/articles/${articleId}/publish`, {
+            const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+`/api/articles/${articleId}/publish`, {
                 method: 'POST'
             })
             if (response.ok) {
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
     const handleRejectArticle = async (articleId) => {
         if (window.confirm('Are you sure you want to reject this article?')) {
             try {
-                const response = await fetch(`http://localhost:8080/api/articles/${articleId}/refuse`, {
+                const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+`/api/articles/${articleId}/refuse`, {
                     method: 'POST'
                 })
                 if (response.ok) {
@@ -179,7 +179,7 @@ export default function AdminDashboard() {
 
     const getNumberOfPublishedArticles = async () => {
         try {
-            const response = await fetch(`http://localhost:8080/api/articles/published`, {
+            const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+`/api/articles/published`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -248,7 +248,7 @@ export default function AdminDashboard() {
     }
 
     const fetchLog = () => {
-        fetch("http://localhost:8080/api/log/logs")
+        fetch(process.env.NEXT_PUBLIC_BACKEND_URL+"/api/log/logs")
             .then((res) => res.json())
             .then((data) => {
                 setLogs(data)
@@ -260,7 +260,7 @@ export default function AdminDashboard() {
     }, [])
 
     const deleteAllLog = () => {
-        fetch("http://localhost:8080/api/log/clean", {
+        fetch(process.env.NEXT_PUBLIC_BACKEND_URL+"/api/log/clean", {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',

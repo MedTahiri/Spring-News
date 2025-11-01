@@ -37,7 +37,7 @@ const getCurrentUser = async () => {
 
 const fetchArticlesByAuthor = async (authorId) => {
     try {
-        const response = await fetch(`http://localhost:8080/api/articles/author/${authorId}`, {
+        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+`/api/articles/author/${authorId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -125,7 +125,7 @@ export default function JournalistDashboard() {
 
     const deleteArticle = async (id) => {
         try {
-            const response = await fetch(`http://localhost:8080/api/articles/delete/${id}`, {
+            const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+`/api/articles/delete/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

@@ -22,7 +22,7 @@ export default function RegisterPage() {
     const router = useRouter()
 
     const Register = async (firstname, lastname, email, password, role, bio) => {
-        const response = await fetch("http://localhost:8080/api/user/register", {
+        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL+"/api/user/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
